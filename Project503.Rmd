@@ -12,8 +12,20 @@ knitr::opts_chunk$set(echo = FALSE, message=FALSE,warning = FALSE,fig.align='cen
 ## Part 1
 
 ```{r}
-library('readxl')
+library('readxl'); library(gplots); library(GGally)
 credit=read_excel('default of credit card clients.xls',na = "NA", skip=1)
 summary(credit)
 ```
+```{r}
+heatmap.2(cor(credit[,-1]), dendrogram='none', Rowv=FALSE, Colv=FALSE, trace='none')
+```
+```{r}
+pca = princomp(credit[,13:18], cor=T)
+summary(pca)
+screeplot(pca, type='l')
+loadings(pca)
+plot(pca$scores)
+biplot(pca, col=c('grey', 'blue'), scale=0)
+```
+
 

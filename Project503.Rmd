@@ -17,3 +17,5 @@ credit=read_excel('default of credit card clients.xls',na = "NA", skip=1)
 summary(credit)
 ```
 
+## Part 2
+

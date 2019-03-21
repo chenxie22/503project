@@ -1,5 +1,5 @@
 # Project: Default of credit card clients Data Set 
-# Author: Chen Xie, Xun Wang, Xinye Jiang
+## Author: Chen Xie, Xun Wang, Xinye Jiang
 
 This is a class project. 
 

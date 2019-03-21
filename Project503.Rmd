@@ -1,0 +1,19 @@
+---
+title: "Stats 503 Project: Credit Default"
+author: "Chen Xie, Xun Wang, Xinye, Jiang"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message=FALSE,warning = FALSE,fig.align='center')
+```
+
+## Part 1
+
+```{r}
+library('readxl')
+credit=read_excel('default of credit card clients.xls',na = "NA", skip=1)
+summary(credit)
+```
+

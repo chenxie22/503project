@@ -10,15 +10,34 @@ knitr::opts_chunk$set(echo = FALSE, message=FALSE,warning = FALSE,fig.align='cen
 ```
 
 ## Part 1
+```{r}
+t1=data.frame('Variables'=c('Y','X1','X2','X3','X4','X5','X6-X11','X12-X17','X18-X23'),
+              'Description'=c('Default Payment','Amount of the given credit','Gender',
+                              'Education','Marital status','Age','History of past payment',
+                              'Amount of bill statement','Amount of previous payment'),
+              'Type'=c('Binary','Numeric','Binary','Categorical','Categorical','Numeric',
+                       'Categorical', 'Numeric','Numeric'),
+              'Details'=c('Response','NT dollar','1 = male; 2 = female',
+                          '1 = graduate school; 2 = university; 3 = high school; 4 = others',
+                          '1 = married; 2 = single; 3 = others','year',
+                          'History of past payment from April to September, 2005',
+                          'Amount of bill statement (NT dollar) from April to September, 2005',
+                          'Amount of previous payment (NT dollar) from April to September, 2005'))
+cap='**Table 1.** *Dataset Description*'
+knitr::kable(t1,format='pandoc',caption=cap,align='c',
+             col.names=c('Variables','Description','Type','Details'))
+```
 
 ```{r}
 library('readxl'); library(gplots); library(GGally)
 credit=read_excel('default of credit card clients.xls',na = "NA", skip=1)
 summary(credit)
 ```
+
 ```{r}
 heatmap.2(cor(credit[,-1]), dendrogram='none', Rowv=FALSE, Colv=FALSE, trace='none')
 ```
+
 ```{r}
 pca = princomp(credit[,13:18], cor=T)
 summary(pca)

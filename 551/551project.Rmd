@@ -12,8 +12,7 @@ knitr::opts_chunk$set(echo = TRUE,message=FALSE,warning=FALSE)
 ## Data Exploration(need to modify)
 
 ```{r}
-library(tidyr); library(MCMCpack); library(coda); library(EBglmnet)
-library(ggplot2)
+library(tidyr); library(MCMCpack); library(coda); library(EBglmnet); library(GGally); library(ggplot2)
 c = read.csv("Churn_Modelling.csv")[,-c(1:3)]
 c$Geography = as.factor(c$Geography)
 c$Gender = as.factor(c$Gender)
@@ -33,7 +32,6 @@ c_pairs
 ```
 
 ```{r}
-library(ggplot2)
 library(gbm)
 p1=ggplot(c, aes(x=Geography,y=Exited,color=Geography)) +
   geom_boxplot(outlier.colour="black", outlier.shape=16,outlier.size=2, notch=FALSE)+

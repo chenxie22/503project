@@ -28,9 +28,24 @@ knitr::kable(t1,format='pandoc',caption=cap,align='c',
              col.names=c('Variables','Description','Type','Details'))
 ```
 
+PAY0,PAY2,Repayment status in September, 2005 (-2=no consumption, -1=pay duly, 0=the use of revolving credit, 1=payment delay for one month, 2=payment delay for two months, … 8=payment delay for eight months, 9=payment delay for nine months and above)
+
 ```{r}
 library('readxl'); library(gplots); library(GGally)
 credit=read_excel('default of credit card clients.xls',na = "NA", skip=1)
+### rename response
+names(credit)[25]='default'
+### categorical variables
+credit$SEX=factor(credit$SEX)
+credit$EDUCATION=factor(credit$EDUCATION)
+credit$MARRIAGE=factor(credit$MARRIAGE)
+credit$PAY_0=factor(credit$PAY_0)
+credit$PAY_2=factor(credit$PAY_2)
+credit$PAY_3=factor(credit$PAY_3)
+credit$PAY_4=factor(credit$PAY_4)
+credit$PAY_5=factor(credit$PAY_5)
+credit$PAY_6=factor(credit$PAY_6)
+credit$default=factor(credit$default)
 summary(credit)
 ```
 
@@ -48,5 +63,80 @@ biplot(pca, col=c('grey', 'blue'), scale=0)
 ```
 
 
-## Part 2
+```{r}
+### split train dataset and test set
+set.seed(77)
+train=sample(1:nrow(credit),size=nrow(credit)*0.8,replace=FALSE)
+```
 
+```{r}
+### perform pca to continous variable
+pca2=princomp(credit[train,c(2,6,13:24)], cor=TRUE)
+summary(pca2)
+loadings(pca2)
+train_pca=cbind(as.matrix(credit[train,c(2,6,13:24)])%*%
+                  as.matrix(loadings(pca2)[,1:8]),credit[train,c(3,4,5,7:12,25)])
+test_pca=cbind(as.matrix(credit[-train,c(2,6,13:24)])%*%
+                  as.matrix(loadings(pca2)[,1:8]),credit[-train,c(3,4,5,7:12,25)])
+```
+
+## Part 2 Logistic Regression
+```{r}
+lr=glm(default~.,data=credit[train,-1],family=binomial)
+pred_lr=1*(predict(lr,credit[-train,-1],type='response')>0.5)
+mean(pred_lr==credit[-train,]$default)
+```
+
+```{r}
+lr_pca=glm(default~.,data=train_pca,family=binomial)
+pred_lr_pca=1*(predict(lr_pca,test_pca,type='response')>0.5)
+mean(pred_lr_pca==test_pca$default)
+```
+
+## Part 3 Random Forest
+```{r}
+library(randomForest)
+set.seed(77)
+rate_tree=c()
+for (i in c(4,3)){
+  rf=randomForest(default~.,data=credit[train,-1],mtry=i,importance=TRUE)
+  pred_rf=predict(rf,newdata=credit[-train,-1])
+  rate_tree=c(rate_tree,mean(pred_rf==credit[-train,]$default))
+}
+rate_tree
+```
+
+
+```{r}
+set.seed(77)
+rate_tree_pca=c()
+for (i in c(4,3,2)){
+  rf_pca=randomForest(default~.,data=train_pca,mtry=i,importance=TRUE)
+  pred_rf_pca=predict(rf_pca,newdata=test_pca)
+  rate_tree_pca=c(rate_tree_pca,mean(pred_rf_pca==test_pca$default))
+}
+rate_tree_pca
+```
+
+## Part 4 Boosting? question about that---have NA values in result
+```{r}
+library(gbm)
+set.seed(1)
+credit$default=as.character(credit$default)
+boost=gbm(default~.,data=credit[train,-1],distribution="bernoulli",n.trees=5000,interaction.depth=4)
+```
+
+```{r}
+set.seed(99)
+pred_boost=predict(boost,newdata=credit[-train,-1],n.trees=5000)
+mean(pred_boost==credit[-train,]$default)
+```
+
+```{r}
+set.seed(77)
+train_pca$default=as.character(train_pca$default)
+boost_pca=gbm(default~.,data=train_pca,distribution="bernoulli",n.trees=5000,interaction.depth=4)
+set.seed(77)
+pred_boost_pca=predict(boost_pca,newdata=test_pca,n.trees=5000)
+mean(pred_boost_pca==test_pca$default)
+```

@@ -10,6 +10,7 @@ knitr::opts_chunk$set(echo = FALSE, message=FALSE,warning = FALSE,fig.align='cen
 ```
 
 ## Part 1
+
 ```{r}
 t1=data.frame('Variables'=c('Y','X1','X2','X3','X4','X5','X6-X11','X12-X17','X18-X23'),
               'Description'=c('Default Payment','Amount of the given credit','Gender',
@@ -28,14 +29,23 @@ knitr::kable(t1,format='pandoc',caption=cap,align='c',
              col.names=c('Variables','Description','Type','Details'))
 ```
 
-PAY0,PAY2,Repayment status in September, 2005 (-2=no consumption, -1=pay duly, 0=the use of revolving credit, 1=payment delay for one month, 2=payment delay for two months, … 8=payment delay for eight months, 9=payment delay for nine months and above)
+Note that the measurement scale for the repayment status (X6-X11) is: -2=no consumption, -1=paid in full, 0=the use of revolving credit, 1=payment delay for one month, 2=payment delay for two months, ..., 8=payment delay for eight months, 9=payment delay for nine months and above. 
 
 ```{r}
 library('readxl'); library(gplots); library(GGally)
-credit=read_excel('default of credit card clients.xls',na = "NA", skip=1)
-### rename response
+credit=read_excel('default of credit card clients.xls', na = "NA", skip=1)
+# rename response
 names(credit)[25]='default'
-### categorical variables
+```
+
+```{r}
+heatmap.2(cor(credit[,-1]), Rowv=FALSE, Colv=FALSE, trace='none')
+```
+
+The heatmap shows that X12-X17, i.e., amount of bill statement for each month from April to September, 2005 are higher correlated with each other. This supports the possibility to reduce the number of dimensions using PCA. 
+
+```{r}
+# categorical variables
 credit$SEX=factor(credit$SEX)
 credit$EDUCATION=factor(credit$EDUCATION)
 credit$MARRIAGE=factor(credit$MARRIAGE)
@@ -46,11 +56,11 @@ credit$PAY_4=factor(credit$PAY_4)
 credit$PAY_5=factor(credit$PAY_5)
 credit$PAY_6=factor(credit$PAY_6)
 credit$default=factor(credit$default)
-summary(credit)
+summary(credit[,-1])
 ```
 
 ```{r}
-heatmap.2(cor(credit[,-1]), dendrogram='none', Rowv=FALSE, Colv=FALSE, trace='none')
+boxplot()
 ```
 
 ```{r}

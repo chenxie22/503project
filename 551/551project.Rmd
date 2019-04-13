@@ -10,13 +10,16 @@ knitr::opts_chunk$set(echo = TRUE,message=FALSE,warning=FALSE)
 ```
 
 ## Data Exploration(need to modify)
+
 ```{r}
-library(tidyr); library(MCMCpack); library(coda); library(EBglmnet); library(GGally)
+library(tidyr); library(MCMCpack); library(coda); library(EBglmnet)
+library(ggplot2)
 c = read.csv("Churn_Modelling.csv")[,-c(1:3)]
 c$Geography = as.factor(c$Geography)
 c$Gender = as.factor(c$Gender)
 c$HasCrCard = as.factor(c$HasCrCard)
 c$IsActiveMember = as.factor(c$IsActiveMember)
+c$Exited = as.factor(c$Exited)
 ```
 
 ```{r}
@@ -50,5 +53,93 @@ p4=ggplot(c, aes(x=IsActiveMember,y=Exited,color=IsActiveMember)) +
   scale_color_manual(values=c("#999999", "#E69F00", "#56B4E9"))
 grid.arrange(p1, p2, p3,p4,nrow = 2)
 ```
+
+```{r}
+# Split into training & test sets
+C = model.matrix(Exited~., data=c)
+set.seed(3)
+ind = sample(1:10000, 7500, replace=F)
+Xtrain = C[ind,]
+Xtest = C[-ind,]
+ytrain = c[ind,11]
+ytest = c[-ind,11]
+```
+
+## Logistic Regression
+
+```{r}
+res_original = glm(ytrain~., data=as.data.frame(Xtrain[,-1]), family=binomial(link="logit"))
+
+p1 = summary(res_original)$coefficients[,4]
+beta1 = res_original$coefficients
+
+name = names(beta1)
+predtest1 = 1*(predict(res_original, newdata=as.data.frame(Xtest[,-1]), type="response")>=0.5)
+table(ytest, predtest1)
+pred1 = mean(predtest1==ytest)
+```
+
+## Bayesian logistic
+
+```{r}
+res_mcmc = MCMClogit(ytrain~Xtrain[,-1], b0 = 0, B0 = 0.01)
+
+beta2_sd = sapply(1:(dim(res_mcmc)[2]), function(i) {sd(res_mcmc[,i])})
+beta2_mean = colMeans(res_mcmc)
+p2 = 2*(1-pnorm(abs(beta2_mean/beta2_sd)))
+
+prob2 = rowMeans(1/(1+exp(-Xtest %*% t(res_mcmc))))
+predtest2 = 1*(prob2>=0.5)
+pred2 = mean(ytest==predtest2)
+table(ytest, predtest2)
+```
+
+```{r}
+# Histogram 
+par(mfrow=c(3,4))
+for(i in 1:12){
+  hist(res_mcmc[,i], 
+       main=sprintf("Posterior of beta %s", name[i]), 
+       xlab=sprintf("%s", name[i]))
+  abline(v=beta1[i], col="red")
+}
+```
+
+```{r}
+# CI plot
+ci2 = data.frame(summary(res_mcmc)$quantiles, name=name, mean=beta2_mean)
+colnames(ci2) = c("lower","quartile1","median","quartile3","upper","name","mean")
+ci2[-1,] %>% # if exclude intercept
+  ggplot( aes(x=name, y=mean) ) + 
+  geom_point() +
+  geom_point( aes(x=name, y=beta1[-1]), col="blue" ) +
+  geom_errorbar( aes(ymin=lower, ymax=upper) ) +
+  coord_flip() +
+  theme_bw() + 
+  ylab("beta") +
+  xlab("")
+ci2 %>% # if include intercept
+  ggplot( aes(x=name, y=mean) ) + 
+  geom_point() +
+  geom_point( aes(x=name, y=beta1), col="blue" ) +
+  geom_errorbar( aes(ymin=lower, ymax=upper) ) +
+  coord_flip() +
+  theme_bw() + 
+  ylab("beta") +
+  xlab("")
+```
+
+```{r}
+# Correlation of beta
+crosscorr.plot(res_mcmc)
+```
+
+```{r}
+# p-values
+p = data.frame(p1=p1, p2=p2)
+knitr::kable(p, align="c")
+```
+
+
 
 

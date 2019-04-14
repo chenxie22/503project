@@ -127,11 +127,12 @@ In conclusion, Bayesian logistic regression with LASSO prior is a hierarchical m
 The hyper prior variances follows an exponential distribution with parameter $\lambda$, which controls the local shrinkage speed of paramters to 0.
 
 
-### to be continue
+## Example: Data/Fitting Models
 
+In this part, we are going to fit the standard logistic regression model, Bayesian logistic regression model as well as Bayesian logistic regression model with LASSO prior. We will estimate the probability of clients who close their bank accounts and make predictions of YES or No based estiamted parameters. In addition, we could also do Bayesian Inferences from posterior samples we obtain using Bayesian method.
 
-
-
+In order to make judgements on the effectiveness of several models, we first split the whole dataset into training partition and test partition randomly at the proportion of 3:1. Then the same training data set is
+going to be used for fitting models and remaining test data set will be used to make predictions.
 
 ```{r}
 # Split into training & test sets
@@ -144,33 +145,63 @@ ytrain = c[ind,11]
 ytest = c[-ind,11]
 ```
 
-## Logistic Regression
 
+Standard logistic regression could be easily fitted by using a very common function `glm` in `stats` package.
+Printing out the summary table, we get a model like:
 ```{r}
+### Logistic Regression
 res_original = glm(ytrain~., data=as.data.frame(Xtrain[,-1]), family=binomial(link="logit"))
-
+summary(res_original)
+### prediction of Standard logistic regression
 p1 = summary(res_original)$coefficients[,4]
 beta1 = res_original$coefficients
-
 name = names(beta1)
 predtest1 = 1*(predict(res_original, newdata=as.data.frame(Xtest[,-1]), type="response")>=0.5)
 table(ytest, predtest1)
+### right rate
 pred1 = mean(predtest1==ytest)
 ```
 
-## Bayesian logistic
+Intepretation of paramters will be showed in next part together with other two models.
 
+Monte Carlo Markov Chain is an extremely effective way to sample from posterior distribution in Bayesian 
+analysis system. In this problem, we then use MCMC method to obtain the posterior distribution of $\beta$ paramters from normal prior. Here `MCMClogit` function in `MCMCpack` could be a good choice for us.
+
+This function runs 11000 default iterations, starting with mean 0 and precision matrix of $0.01\textbf{I}$ under a multivariate normal prior. Discarding first 1000 iterarions, we save the big posterior matrix into
+an object `res_mcmc`.
 ```{r}
+## Bayesian logistic
 res_mcmc = MCMClogit(ytrain~Xtrain[,-1], b0 = 0, B0 = 0.01)
-
 beta2_sd = sapply(1:(dim(res_mcmc)[2]), function(i) {sd(res_mcmc[,i])})
 beta2_mean = colMeans(res_mcmc)
 p2 = 2*(1-pnorm(abs(beta2_mean/beta2_sd)))
-
 prob2 = rowMeans(1/(1+exp(-Xtest %*% t(res_mcmc))))
 predtest2 = 1*(prob2>=0.5)
 pred2 = mean(ytest==predtest2)
 table(ytest, predtest2)
+```
+
+
+
+### to be continue
+
+
+
+Bayesian logistic regression with LASSO prior is a more complicated hierarchical model compared with previous
+ones. It is usually a little hard to realize the sampling process. Fortunately, we could also use a function contributed by other users called `EBglmnet` to acheive the same result. by specifying $\lambda$, where $\lambda$ is a fixed but unknow paramter that we need to eatimate first. So we first use cross-validation to select the optimal $\lambda$ which See references below to get more information about this fucntion.
+
+```{r}
+## Bayesian logistic regression model with LASSO prior: cv used to select model, 
+set.seed(3)
+res_lassocv = cv.EBglmnet(Xtrain[,-1], ytrain, family="binomial", prior="lasso")
+res_lasso = EBglmnet(Xtrain[,-1], ytrain, family="binomial", prior="lasso", hyperparameters = 8.201102e-05)
+beta3 = c(res_lasso$Intercept, rep(0,11))
+for(i in 1:nrow(res_lasso$fit)){
+  beta3[res_lasso$fit[i,1]+1] = res_lasso$fit[i,3]
+}
+pred3 = 1*(1/(1+exp(-Xtest %*% beta3))>=0.5)
+mean(ytest==pred3)
+table(ytest, pred3)
 ```
 
 ```{r}
@@ -219,6 +250,23 @@ p = data.frame(p1=p1, p2=p2)
 knitr::kable(p, align="c")
 ```
 
+## Inference and Prediction
+
+## Conclusion
+
+## References
+
+Wei, R., and Ghosal, S. (2017). Contraction properties of shrinkage priors in logistic regression, Preprint at http://www4.stat.ncsu.edu/~ghoshal/papers.
+
+Genkin, A., Lewis, D. and Madigan, D. (2007). Large-scale Bayesian logistic regression for text categorization, \textit{Technometrics} \textbf{49}(3): 291–304.
+
+Kapat, P., and Wang K. (2006). Classification Using Bayesian Logistic Regression: Diabetes in Pima Indian Women Example. Ohio State University, OH. https://www.asc.ohio-state.edu/goel.1/STAT825/PROJECTS/KapatWang_Team4Report.pdf
+
+Anhui Huang and Dianting Liu (2016). EBglmnet: Empirical Bayesian Lasso and Elastic Net Methods for Generalized Linear Models. R package version 4.1. https://CRAN.R-project.org/package=EBglmnet
+
+Andrew D. Martin, Kevin M. Quinn, Jong Hee Park (2011). MCMCpack: Markov Chain Monte Carlo in R. Journal of Statistical Software. 42(9): 1-21. URL http://www.jstatsoft.org/v42/i09/.
+
+Li, L & Yao, W. (2017). Fully Bayesian logistic regression with hyper-LASSO priors for high-dimensional feature selection. Statistics 88, 1-25.
 
 
 

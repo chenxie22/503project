@@ -129,7 +129,7 @@ The hyper prior variances follows an exponential distribution with parameter $\l
 
 ## Example: Data/Fitting Models
 
-In this part, we are going to fit the standard logistic regression model, Bayesian logistic regression model as well as Bayesian logistic regression model with LASSO prior. We will estimate the probability of clients who close their bank accounts and make predictions of YES or No based estiamted parameters. In addition, we could also do Bayesian Inferences from posterior samples we obtain using Bayesian method.
+In this part, we are going to fit the standard logistic regression model, Bayesian logistic regression model as well as Bayesian logistic regression model with LASSO prior. We will estimate the probability of clients who close their bank accounts and make predictions of YES or No based estiamted parameters. In addition, we could also do Bayesian inferences from posterior samples we obtain using Bayesian method.
 
 In order to make judgements on the effectiveness of several models, we first split the whole dataset into training partition and test partition randomly at the proportion of 3:1. Then the same training data set is
 going to be used for fitting models and remaining test data set will be used to make predictions.
@@ -162,12 +162,12 @@ table(ytest, predtest1)
 pred1 = mean(predtest1==ytest)
 ```
 
-Intepretation of paramters will be showed in next part together with other two models.
+Intepretation of parameters will be showed in next part together with other two models.
 
 Monte Carlo Markov Chain is an extremely effective way to sample from posterior distribution in Bayesian 
-analysis system. In this problem, we then use MCMC method to obtain the posterior distribution of $\beta$ paramters from normal prior. Here `MCMClogit` function in `MCMCpack` could be a good choice for us.
+analysis system. In this problem, we then use MCMC method to obtain the posterior distribution of $\beta$ parameters from normal prior. Here `MCMClogit` function in `MCMCpack` package could be a good choice for us.
 
-This function runs 11000 default iterations, starting with mean 0 and precision matrix of $0.01\textbf{I}$ under a multivariate normal prior. Discarding first 1000 iterarions, we save the big posterior matrix into
+This function runs 11000 default iterations, starting with mean 0 and precision matrix of $0.01\textbf{I}$ under a multivariate normal prior. Discarding first 1000 iterarions, we save the big c(10000,12) posterior matrix into
 an object `res_mcmc`.
 ```{r}
 ## Bayesian logistic
@@ -181,14 +181,11 @@ pred2 = mean(ytest==predtest2)
 table(ytest, predtest2)
 ```
 
+Bayesian logistic regression with LASSO prior is a more complex hierarchical model compared with previous
+ones. We need to sample from the joint posterior formula of $\beta,\sigma^2$, and $\lambda$ is a fixed but unknow paramter that we need to eatimate first. So we first use cross-validation to select the optimal $\lambda$ which may minimize cross-validation error. By specifying $\lambda$, we fit a hierarchical Bayesian model to make references on test data. It is usually a little hard or tedious to realize the sampling process without cojugate priors. In terms of our knowledge, we could use another powerful tool Rstan to do Hamilton Monte Carlo sampling. See Appendix for Rstan script. we could also use a function contributed by other R users called `EBglmnet` to acheive the same objective, which is much concise. First, we use `cv.EBglmnet` function to select the optimal model. In last step using `EBglmnet` to sample from the established model. See references below to get more information about this fucntion.
 
 
 ### to be continue
-
-
-
-Bayesian logistic regression with LASSO prior is a more complicated hierarchical model compared with previous
-ones. It is usually a little hard to realize the sampling process. Fortunately, we could also use a function contributed by other users called `EBglmnet` to acheive the same result. by specifying $\lambda$, where $\lambda$ is a fixed but unknow paramter that we need to eatimate first. So we first use cross-validation to select the optimal $\lambda$ which See references below to get more information about this fucntion.
 
 ```{r}
 ## Bayesian logistic regression model with LASSO prior: cv used to select model, 

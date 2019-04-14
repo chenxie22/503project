@@ -15,13 +15,17 @@ Logistic regression is a very famous and widely applied technique in supervised 
 
 Logistic regression can also be approached by Bayesian modeling. In general, Bayesian analysis is more flexible, and it is proved to be superior for small samples. For Bayesian modeling, it can incorporate prior information. For example, if we want to know exactly which factors are most effective on the response, we can use shrinkage prior to implement variable selection. 
 
-In practice, predicting the exit status(binary: 0 or 1) of customers of a bank can be an application of the standard logistic regression as well as Bayesian approach. In this report, we delve into a data set about account status of a bank in three European countries. The objective is to predict if the clients will leave the bank based on part of their information, such as geography, gender and account balances, etc. In this process, we also explore the different effects of specific predictors to response variable in different models. 
+In practice, predicting the exit status (binary: 0 or 1) of customers of a bank can be an application of the standard logistic regression as well as Bayesian approach. In this report, we delve into a data set about account status of a bank in three European countries. The objective is to predict if the clients will leave the bank based on part of their information, such as geography, gender and account balances, etc. In this process, we will also explore the different effects of specific predictors to response variable in different models. 
 
 ## Data Exploration
 
 The data set we use for this report is from Kaggle website. It has 10000 observations and 11 variables. The table below shows their names, types and descriptions. This data set has 6 numeric predictors and 4 categorical variables.
  
  table 1: predictors and short descriptions
+ 
+ <center>
+![](Dataset.png){width=72%}
+</center>
 
 The additional figure also shows the overall distribution of the binary response (Exited status). From the figure, we could find that a large proportion of clients keep their bank accounts, that number of exited status=0 is almost four times of number of clients who left the bank.
 

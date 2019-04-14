@@ -9,7 +9,7 @@ output: pdf_document
 knitr::opts_chunk$set(echo = FALSE,message=FALSE,warning=FALSE)
 ```
 
-## Introduction
+## 1 Introduction
 
 Logistic regression is a very famous and widely applied technique in supervised learning. It is usually used to perform predictive analysis when the response variable is binary. 
 
@@ -17,25 +17,155 @@ Logistic regression can also be approached by Bayesian modeling. In general, Bay
 
 In practice, predicting the exit status (binary: 0 or 1) of customers of a bank can be an application of the standard logistic regression as well as Bayesian approach. In this report, we delve into a data set about account status of a bank in three European countries. The objective is to predict if the clients will leave the bank based on part of their information, such as geography, gender and account balances, etc. In this process, we will also explore the different effects of specific predictors to response variable in different models. 
 
-## Data Exploration
+## 2 Data Exploration
 
-The data set we use for this report is from Kaggle website. It has 10000 observations and 11 variables. The table below shows their names, types and descriptions. This data set has 6 numeric predictors and 4 categorical variables.
+### 2.1 Data Set
+
+The data set we use for this report is from Kaggle website. It has 10000 observations and 11 variables. The Exit Status (Exited) is our response variable. The Exit States is 1 if the customer closed account with bank and 0 if the customer is retained. The other variables can be treated as predictors, and they are Credit Score, Geography, Gender, Age, Tenure, Balance, Number Of Products (NumOfProducts), Has Credit Card (HasCrCard), Is Active Member, Estimated Salary. This data set has mixture of types of independent variables, where 6 of them are numeric and 4 are categorical. And the Table 1 below shows more details of all the variables in this data, including names, types and brief descriptions.
+
+
+```{r}
+library(MCMCpack); library(coda); library(EBglmnet)
+library(ggplot2);library(gbm);library(GGally)
+library(dplyr);library(tidyr)
+library(knitr);library(kableExtra)
+c = read.csv("Churn_Modelling.csv")[,-c(1:3)]
+c$Geography = as.factor(c$Geography)
+c$Gender = as.factor(c$Gender)
+c$HasCrCard = as.factor(c$HasCrCard)
+c$IsActiveMember = as.factor(c$IsActiveMember)
+c$Exited = as.factor(c$Exited)
+```
  
- table 1: predictors and short descriptions
  
- <center>
-![](Dataset.png){width=72%}
-</center>
+```{r,out.height='80%',out.width='80%'}
+library(tidyr)
+cap='Brief Descriptions of Predictors'
+data.frame(v1=c('Exited Status','Credit Score','Geography','Gender',
+                'Age','Tenure','Balance','Number of Products',
+                'Has Credit Card','Is Active Member','Estimated Salary'),
+       v2=c('Binary','Continuous','Categorical','Binary',
+            'Continuous','Continuous','Continuous',
+            'Discrete','Binary','Binary','Continuous'),
+       v3=c('1 if the customer closed account and 0 if the customer is retained',
+            'Credit Score of the customer',
+            'The country from which the customer belongs',
+            'Male or Female','Age of the customer',
+            'Number of years for which the customer has been with the bank',
+            'Bank balance of the customer',
+            'Number of bank products the customer is utilizing',
+            'Whether the customer holds a credit card with the bank or not',
+            'Whether the customer is an active member with the bank or not',
+            'Estimated salary of the customer in Dollars'
+            ))%>%
+  knitr::kable(col.names = c('Variables','Type','Description'),
+               caption = cap,align = 'l',format="latex",longtable=TRUE,booktabs = T) %>%
+  kableExtra::kable_styling(latex_options = "striped") 
+```
 
-The additional figure also shows the overall distribution of the binary response (Exited status). From the figure, we could find that a large proportion of clients keep their bank accounts, that number of exited status=0 is almost four times of number of clients who left the bank.
+### 2.2 Data Exploration
 
- figure1: response
+The Table 2 and Table 3 are summary statistics of all the variables. To be more precise, Figure 1 shows barcharts of categorical variables. In the Figure 1, the left figure shows the overall distribution of Exited statu, where we could find that a large proportion of clients keep their bank accounts. The number of Exited Status=0 is almost four times of number of clients who left the bank. The data is very imbalanced, which may be problems for further inference or prediction. The right part in Figure 1 shows how categorical predictors are distributed by Exited Status. It implies that whether the customer has a credit card extremely affects the Exited Status.
 
-In next step, we explore the relationship between predictors and the response variable. Bar plots of categorical predictors against response and pairwise plots as well as summary tables are displayed. We could gain a general knowledge of distributions for every categorical or numeric variable.
+```{r}
+do.call(cbind, lapply(c[,c(1,4,5,6,7,10)],summary)) %>%
+  kable("latex", booktabs = T,
+        caption='Summary of Numeric Variables') %>%
+  kable_styling(latex_options = "striped")
 
- table2 figure2: categorical predictors summary and bar plots
- 
- table3 figure3, 4: quantitative predictors summary, box plot and hist, correlation
+tbl1<-tibble('Geography'=c('France: 5014','Germany: 2509', 'Spain: 2477'), 
+             'Gender '=c('Female: 4543', 'Male: 5457',''), 
+             'HasCrCard'=c('0: 2945', '1: 7055 ',''),
+             'IsActiveMember'=c('0: 4849', '1: 5151',''),
+             'Exited'=c('0: 7963', '1: 2037',''))
+tbl1 %>%
+  kable("latex", booktabs = T,
+        caption = 'Summary of Categorical Variables') %>%
+  kable_styling()
+```
+
+
+```{r, echo=FALSE,out.width="49%", out.height="30%",fig.cap="Barcharts",fig.show='hold',fig.align='center'}
+knitr::include_graphics(c("response1.png","response2.png"))
+
+```
+
+
+Next, we also want to explore the relationship between predictors and the response variable. The left part in Figure 2 shows the boxplots of continuous factors by Exited Status. It provides some evidence that some predictors have strong impact on Exited Status. For instance, Age and Balance are inluential factors for Exited Status. The right part in Figure 2  is the pairwise plot of numeric predictors, including scatterplots, correlations bewteen each two of them, as well as histograms. We could gain a general knowledge of distributions for every numeric variable. According to the right plot in Figure 2, the numeric predicors are not highly correlated with each other. 
+
+However, although we can observe some information of the relationship between predictors and the response variable, we need more credible proofs.
+
+```{r, echo=FALSE,out.width="49%", out.height="30%",fig.cap="Boxplots and Scatter Plots",fig.show='hold',fig.align='center'}
+knitr::include_graphics(c("boxplot.png","pairs.png"))
+
+```
+
+
+### 2.3 Problems of the Data
+
+Imbalanced data unclear source biased data collection It may need more ... we can still do some learning from this data.
+
+## 3 Regression Models
+
+In this part, we will briefly introduce three logistic regression models, including the standard one and two Bayesian models. 
+
+### 3.1 Logistic Regression
+
+In addition to the most significant reason that our response variable is binary, there are several advantages of logistic regression against other methods. First, it can be interpreted more easily comapred with some complex models, while holding the same level of prediction precision. It helps to explain the relationship between the predictors and response variable. Next, the logistic regression can also handle mixed types of exploratory variables. Finally, logistic regression is an informative method that it provides both the size and the direction of the effects of its predictors.
+
+The basic assumption of standard logistic regression model is that the observations $y_1, ..., y_n$ are independent and following binomial distribution (1, $p_i$), where $p_i$ is the probability of response $y_i=1$. We could estimate the parameters $\beta$ by maximum likelihood method, that is, maximizing $P(y_1,...,y_n;\beta)$. The estimate is also called ML estimate. The statistical description is as below:
+
+\[y_1,...,y_n, \textup{ are independent}\]
+
+\[y_i\sim \textup{ Binomial }(1, p_i)\]
+
+\[\log(\frac{p_i}{1-p_i})=x_i^T\beta\]
+
+\[p(y_i;\beta)=(p_i)^{y_i}(1-p_i)^{1-y_i}\]
+
+\[p(y_1,...,y_n;\beta)=\prod_{i=1}^n(p_i)^{y_i}(1-p_i)^{1-y_i}\]
+
+Among them, $x_i$ is the i-th row of observation and $\beta$ is the  parameters.
+
+### 3.2 Bayesian Logistic Regression with Normal prior
+
+In the standard logistic regression above, we treat $\beta$ as a column of unknown but fixed parameters. Actually, $\beta$ could be seen as a vector of random variables from the prospective of Bayesian analysis. That is the preliminary thought of Bayesian analysis. In this case, we can also get a point estimate for the parameters by maximizing the posterior distribution. The maximum of posterior distribution, that is, the mode of posterior, is called MAP estimation. But sometimes, it is hard to get analytic form of mode of the posterior distribution. Instead, we can estimate the parameters by mean or median of posterior samples, which is ususally generated by Markov chain Monte Carlo (MCMC) sampling methods. For this paper, we also use this idea for inference and prediction. 
+
+In the Bayesian logistic regression, basiclly it assumes that $\beta$ follows a multivariate normal prior distribution. For simplicity, we also assume $\beta_i$ are indenpendent with each other. and $\mu$, $\sigma$. It has some shrinkage effects on $\beta$, but not strong. 
+
+The assumptions are:
+
+\[y_1,...,y_n, \textup{ are independent}\]
+
+\[\textup{Likelihood: } y_i\sim \textup{ Binomial }(1, p_i)\]
+
+\[\textup{Parameters: }\log(\frac{p_i}{1-p_i})=x_i^T\beta\]
+
+\[\textup{Prior: } \beta\sim N(\mathbf{\mu,\Sigma} )\]
+
+\[\textup{Also Assume: } \beta_1,...,\beta_p \textup{ are independent}\]
+
+\[\beta_i\sim N(0,0.01^{-1} )\]
+
+where $\mu$ is the mean vector of $\beta$ and $\Sigma$ is a covariance matrix.
+
+
+
+### 3.3 Bayesian Logistic Regression with NE prior
+
+To figure out the most important predictors to the exited status response and to improve the prediction precision, we could use the LASSO Interpretation, cross validation methods,...
+
+\[y_1,...,y_n, \textup{ are independent}\]
+
+\[\textup{Likelihood: } y_i\sim \textup{ Binomial }(1, p_i)\]
+
+\[\textup{Parameters: }\log(\frac{p_i}{1-p_i})=x_i^T\beta\]
+
+\[\textup{prior: } \beta_i\sim N(0,\sigma_i^2)\]
+
+\[\textup{Assume: } \beta_1,...,\beta_p \textup{ are independent}\]
+
+\[\textup{Hyper Prior: } P(\sigma_i^2) \sim \textup{Exponential }(\lambda)\]
 
 ```{r}
 library(tidyr); library(MCMCpack); library(coda); library(EBglmnet); library(GGally); library(ggplot2)
@@ -47,7 +177,7 @@ c$IsActiveMember = as.factor(c$IsActiveMember)
 c$Exited = as.factor(c$Exited)
 ```
 
-```{r}
+```{r,eval=FALSE}
 c_pairs=ggpairs(c[c(1,4,5,6,7,10)],axisLabels = "none",
         upper = list(continuous = "points", combo = "dot"),
         lower = list(continuous = "cor", combo = "dot"),
@@ -57,7 +187,7 @@ c_pairs=ggpairs(c[c(1,4,5,6,7,10)],axisLabels = "none",
 c_pairs
 ```
 
-```{r}
+```{r,eval=FALSE}
 library(gbm)
 p1=ggplot(c, aes(x=Geography,y=Exited,color=Geography)) +
   geom_boxplot(outlier.colour="black", outlier.shape=16,outlier.size=2, notch=FALSE)+
@@ -78,62 +208,6 @@ p4=ggplot(c, aes(x=IsActiveMember,y=Exited,color=IsActiveMember)) +
 grid.arrange(p1, p2, p3,p4,nrow = 2)
 ```
 
-## Logistic Regression Model
-
-In this part, we will briefly introduce three logistic regression models, including standard one and two Bayesian models. In addition to the most significant reason that our response variable is binary, there are several advantages of logistic regression against other methods.  First, it can be interpreted more easily comapred with some complex models, while holding the same level of prediction precision. It helps to explain the relationship between the predictors and response variable. Next, the logistic regression can also handle mixed types of exploratory variables. Finally, logistic regression is an informative method that it provides both the size and
-the direction of the effects of its predictors.
-
-### Logistic Regression
-
-The basic assumption of standard logistic regression model is that the observations $y_1, ..., y_n$ are independent and following binomial distribution (1, $p_i$), where $p_i$ is the probability of response $y_i=1$. We could estimate the parameters $\beta$ ,which maximize $\Pi_{i=1}^n P(Y_i=y_i)$ using log-maximum likelihood approach. The statistical description is below:
-
-\[y_i\sim \textup{ Binomial }(1, p_i)\]
-\[\log(\frac{p_i}{1-p_i})=x_i^T\beta\]
-
-\[p(y_i;\beta)=(p_i)^{y_i}(1-p_i)^{1-y_i}\]
-
-
-\[p(y_1,...,y_n;\beta)=\prod_{i=1}^n(p_i)^{y_i}(1-p_i)^{1-y_i}\]
-Among them, $x_i$ is the i-th row of observation and $\beta$ are parameters.
-
-### Bayesian Logistic Regression
-
-In the standard logistic regression above, we treat $\beta$ as a column of unknown but fixed parameters. Actually, $\beta$ could be seen as a vector of random variables from the prospective of Bayesian analysis. 
-That is the preliminary thought of Bayesian analysis. In this case, we use data (model) and prior we have to estimate the posterior distribution of parameters. Basic Bayesian logistic regression method assumes that $\beta$ follows a multivariate normal prior distribution . 
-
-\[\textup{model: } y_i\sim \textup{ Binomial }(1, p_i)\]
-\[\log(\frac{p}{1-p})=X^T\beta\]
-\[\textup{prior: } \beta\sim N(\mathbf{\mu,\Sigma} )\]
-
-where $\mu$ is the mean vector of $\beta$ and $\Sigma$ is a covariance matrix.
-
-### Bayesian Logistic Regression with LASSO prior
-
-To figure out the most important predictors to the exited status response and to improve the prediction precision, we could use LASSO prior to the fit a logistic model with original data. With fewer predictors 
-left, LASSO prior also adds to interpretation of our final model.
-
-\[\textup{model: } y_i\sim \textup{ Binomial }(1, p_i)\]
-\[\log(\frac{p}{1-p})=X^T\beta\]
-\[\textup{prior: } \beta_i\sim N(0,\sigma_i^2)\]
-\[\textup{hyper prior: } P(\sigma_i^2) \sim Exponential(\lambda)\]
-
-where $\lambda$ is a fixed real number.
-
-In LASSO logistic regression model, we first set a hypothesis that the solution is sparse that only a few of parameters $\beta$ are not zero and do not have significant contributions to response $y$. So the prior use a heavy-tailed exponential distribution for variances of parameters, which means variances $\sigma^2$ peak 
-around 0 and have a high probability to equal or approximate 0. If $\sigma^2$ is small enough, we could assign
-0 to associated parameters. That is the mechanism of shrinkage prior like LASSO. 
-
-In conclusion, Bayesian logistic regression with LASSO prior is a hierarchical model with normal prior.
-The hyper prior variances follows an exponential distribution with parameter $\lambda$, which controls the local shrinkage speed of paramters to 0.
-
-
-## Example: Data/Fitting Models
-
-In this part, we are going to fit the standard logistic regression model, Bayesian logistic regression model as well as Bayesian logistic regression model with LASSO prior. We will estimate the probability of clients who close their bank accounts and make predictions of YES or No based estiamted parameters. In addition, we could also do Bayesian inferences from posterior samples we obtain using Bayesian method.
-
-In order to make judgements on the effectiveness of several models, we first split the whole dataset into training partition and test partition randomly at the proportion of 3:1. Then the same training data set is
-going to be used for fitting models and remaining test data set will be used to make predictions.
-
 ```{r}
 # Split into training & test sets
 C = model.matrix(Exited~., data=c)
@@ -148,6 +222,7 @@ ytest = c[-ind,11]
 
 Standard logistic regression could be easily fitted by using a very common function `glm` in `stats` package.
 Printing out the summary table, we get a model like:
+
 ```{r}
 ### Logistic Regression
 res_original = glm(ytrain~., data=as.data.frame(Xtrain[,-1]), family=binomial(link="logit"))
@@ -169,6 +244,7 @@ analysis system. In this problem, we then use MCMC method to obtain the posterio
 
 This function runs 11000 default iterations, starting with mean 0 and precision matrix of $0.01\textbf{I}$ under a multivariate normal prior. Discarding first 1000 iterarions, we save the big c(10000,12) posterior matrix into
 an object `res_mcmc`.
+
 ```{r}
 ## Bayesian logistic
 res_mcmc = MCMClogit(ytrain~Xtrain[,-1], b0 = 0, B0 = 0.01)
@@ -278,11 +354,31 @@ p = data.frame(p1=p1, p2=p2)
 knitr::kable(p, align="c")
 ```
 
-## Inference and Prediction
+## 4 Inference
 
-## Conclusion
+### 4.1 Logistic Regression
 
-## References
+### 4.2 Bayesian Logistic Regression with Normal prior
+
+### 4.3 Bayesian Logistic Regression with NE prior
+
+
+## 5 Prediction
+
+### 5.1 Logistic Regression
+
+### 5.2 Bayesian Logistic Regression with Normal prior
+
+### 5.3 Bayesian Logistic Regression with NE prior
+
+## 6 Discussion
+
+## 7 Conclusion
+
+
+## 8 Future Work
+
+## 9 References
 
 Wei, R., and Ghosal, S. (2017). Contraction properties of shrinkage priors in logistic regression, Preprint at http://www4.stat.ncsu.edu/~ghoshal/papers.
 

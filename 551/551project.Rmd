@@ -126,8 +126,11 @@ around 0 and have a high probability to equal or approximate 0. If $\sigma^2$ is
 In conclusion, Bayesian logistic regression with LASSO prior is a hierarchical model with normal prior.
 The hyper prior variances follows an exponential distribution with parameter $\lambda$, which controls the local shrinkage speed of paramters to 0.
 
-In the next part, we will fit three different models using these models and compare these three
-standard logistic regression and Bayesian approach.
+In the next part, we will fit three different models using these three models and compare their results.
+
+
+
+
 
 ### to be continue
 

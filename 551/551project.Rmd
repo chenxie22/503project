@@ -107,6 +107,28 @@ That is the preliminary thought of Bayesian analysis. In this case, we use data 
 
 where $\mu$ is the mean vector of $\beta$ and $\Sigma$ is a covariance matrix.
 
+### Bayesian Logistic Regression with LASSO prior
+
+To figure out the most important predictors to the exited status response and to improve the prediction precision, we could use LASSO prior to the fit a logistic model with original data. With fewer predictors 
+left, LASSO prior also adds to interpretation of our final model.
+
+\[\textup{model: } y_i\sim \textup{ Binomial }(1, p_i)\]
+\[\log(\frac{p}{1-p})=X^T\beta\]
+\[\textup{prior: } \beta_i\sim N(0,\sigma_i^2)\]
+\[\textup{hyper prior: } P(\sigma_i^2) \sim Exponential(\lambda)\]
+
+where $\lambda$ is a fixed real number.
+
+In LASSO logistic regression model, we first set a hypothesis that the solution is sparse that only a few of parameters $\beta$ are not zero and do not have significant contributions to response $y$. So the prior use a heavy-tailed exponential distribution for variances of parameters, which means variances $\sigma^2$ peak 
+around 0 and have a high probability to equal or approximate 0. If $\sigma^2$ is small enough, we could assign
+0 to associated parameters. That is the mechanism of shrinkage prior like LASSO. 
+
+In conclusion, Bayesian logistic regression with LASSO prior is a hierarchical model with normal prior.
+The hyper prior variances follows an exponential distribution with parameter $\lambda$, which controls the local shrinkage speed of paramters to 0.
+
+In the next part, we will fit three different models using these models and compare these three
+standard logistic regression and Bayesian approach.
+
 ### to be continue
 
 

@@ -9,7 +9,11 @@ output: html_document
 knitr::opts_chunk$set(echo = FALSE, message=FALSE,warning = FALSE,fig.align='center')
 ```
 
-## Part 1
+## Summary
+
+## Analysis
+
+### Data Exploration
 
 ```{r}
 t1=data.frame('Variables'=c('Y','X1','X2','X3','X4','X5','X6-X11','X12-X17','X18-X23'),
@@ -29,23 +33,25 @@ knitr::kable(t1,format='pandoc',caption=cap,align='c',
              col.names=c('Variables','Description','Type','Details'))
 ```
 
-Note that the measurement scale for the repayment status (X6-X11) is: -2=no consumption, -1=paid in full, 0=the use of revolving credit, 1=payment delay for one month, 2=payment delay for two months, ..., 8=payment delay for eight months, 9=payment delay for nine months and above. 
+(Note that the measurement scale for the repayment status (X6-X11) is: -2=no consumption, -1=paid in full, 0=the use of revolving credit, 1=payment delay for one month, 2=payment delay for two months, ..., 8=payment delay for eight months, 9=payment delay for nine months and above.)
 
 ```{r}
-library('readxl'); library(gplots); library(GGally)
+library('readxl'); library(gplots); library(GGally); library(ggplot2)
 credit=read_excel('default of credit card clients.xls', na = "NA", skip=1)
 # rename response
 names(credit)[25]='default'
+# EDUCATION: 1=graduate school, 2=university, 3=high school, 0,4,5,6=others
+credit$EDUCATION = ifelse(credit$EDUCATION>3, 0, credit$EDUCATION)
 ```
 
 ```{r}
 heatmap.2(cor(credit[,-1]), Rowv=FALSE, Colv=FALSE, trace='none')
 ```
 
-The heatmap shows that X12-X17, i.e., amount of bill statement for each month from April to September, 2005 are higher correlated with each other. This supports the possibility to reduce the number of dimensions using PCA. 
+The heatmap shows that X12-X17, i.e., amount of bill statement for each month from April to September, 2005 are highly correlated with each other. This supports the possibility to reduce the number of dimensions using PCA. 
 
 ```{r}
-# categorical variables
+# Redefine categorical variables
 credit$SEX=factor(credit$SEX)
 credit$EDUCATION=factor(credit$EDUCATION)
 credit$MARRIAGE=factor(credit$MARRIAGE)
@@ -60,37 +66,82 @@ summary(credit[,-1])
 ```
 
 ```{r}
-boxplot()
+par(mfrow=c(3,1))
+plot(table(credit$SEX, credit$default), xlab="sex (1=male,2=female)", ylab="default", main="")
+plot(table(credit$EDUCATION, credit$default), xlab="education (1=graduate,2=university,3=high school,0=other)", ylab="default", main="")
+plot(table(credit$MARRIAGE, credit$default), xlab="marriage (1=married,2=single,3=divorce,0=other)", ylab="default", main="")
 ```
 
+The table plots show that females are less likely to default to repay than males. People who have higher degrees have a higher tendency to repay on schedule. And people who are single are slightly less likely to default on payment.
+
 ```{r}
-pca = princomp(credit[,13:18], cor=T)
-summary(pca)
-screeplot(pca, type='l')
-loadings(pca)
-plot(pca$scores)
-biplot(pca, col=c('grey', 'blue'), scale=0)
+par(mfrow=c(2,7))
+boxplot(credit$default, credit$LIMIT_BAL, xlab="default", ylab="amount of the given credit")
+month_name = c("April","May","June","July","August","September")
+for(i in 1:6){
+  boxplot(credit$default, credit[[i+12]], xlab="default", 
+          ylab=sprintf("Amount of bill statement in %s, 2015", month_name[i]))
+}
+boxplot(credit$default, credit$AGE, xlab="default", ylab="age")
+for(i in 1:6){
+  boxplot(credit$default, credit[[i+18]], xlab="default", 
+          ylab=sprintf("Amount of previous payment in %s, 2015", month_name[i]))
+}
 ```
 
+We can see from the boxplots that people who are granted higher amount of the given credit are more likely to default. And people who default on payment seem to be older in age. Those who have smaller amount of bill statement or smaller amount of previous payment have a higher tendency repay on time. 
+
+Split the dataset into training and test sets for the convenience of further analysis.
 
 ```{r}
-### split train dataset and test set
+# Split the dataset into training and test sets
 set.seed(77)
 train=sample(1:nrow(credit),size=nrow(credit)*0.8,replace=FALSE)
 ```
 
+Perform PCA to continuous variables in order to reduce data dimensionality. 
+
 ```{r}
-### perform pca to continous variable
-pca2=princomp(credit[train,c(2,6,13:24)], cor=TRUE)
-summary(pca2)
-loadings(pca2)
-train_pca=cbind(as.matrix(credit[train,c(2,6,13:24)])%*%
-                  as.matrix(loadings(pca2)[,1:8]),credit[train,c(3,4,5,7:12,25)])
-test_pca=cbind(as.matrix(credit[-train,c(2,6,13:24)])%*%
-                  as.matrix(loadings(pca2)[,1:8]),credit[-train,c(3,4,5,7:12,25)])
+# Perform PCA to continous variables
+pca = princomp(credit[train,c(2,6,13:24)], cor=TRUE)
+#summary(pca)
+pca_prop = data.frame(Comp.1=c(2.4298548,0.4217282,0.4217282), 
+                      Comp.2=c(1.3243809,0.1252846,0.5470128), 
+                      Comp.3=c(1.02357785,0.07483654,0.62184935), 
+                      Comp.4=c(0.95642037,0.06533857,0.68718791), 
+                      Comp.5=c(0.93699706,0.06271168,0.74989959),
+                      Comp.6=c(0.9250108,0.0611175,0.8110171),
+                      Comp.7=c(0.87957621,0.05526102,0.86627811),
+                      Comp.8=c(0.85974270,0.05279697,0.91907508),
+                      Comp.9=c(0.83984210,0.05038105,0.96945613),
+                      Comp.10=c(0.52127303,0.01940897,0.98886510),
+                      Comp.11=c(0.261998830,0.004903099,0.993768200),
+                      Comp.12=c(0.201218079,0.002892051,0.996660251),
+                      Comp.13=c(0.155949121,0.001737152,0.998397403),
+                      Comp.14=c(0.149787711,0.001602597,1.000000000),
+                      row.names = c("Std. dev.","Prop of var.","Cumulative Prop."))
+knitr::kable(pca_prop, align='c', digits = 4,
+             caption="Standard deviation and proportion of variance explained by the principal components")
+screeplot(pca, type='l')
 ```
 
-## Part 2 Logistic Regression
+From the table of the proportion of variance explained by the principal components and the scree plot, we select the first 6 principal components which cumulatively explain over 80% of the variance. 
+
+```{r}
+knitr::kable(pca$loadings[,1:6], align='c', digits = 3, 
+             caption="Loadings of the PCA on the correlation matrix")
+train_pca=cbind(as.matrix(credit[train,c(2,6,13:24)])%*%
+                  as.matrix(loadings(pca)[,1:6]),credit[train,c(3,4,5,7:12,25)])
+test_pca=cbind(as.matrix(credit[-train,c(2,6,13:24)])%*%
+                  as.matrix(loadings(pca)[,1:6]),credit[-train,c(3,4,5,7:12,25)])
+```
+
+
+
+### Implementation of Statistical Learning Techniques
+
+#### Logistic Regression
+
 ```{r}
 lr=glm(default~.,data=credit[train,-1],family=binomial)
 pred_lr=1*(predict(lr,credit[-train,-1],type='response')>0.5)
@@ -103,12 +154,13 @@ pred_lr_pca=1*(predict(lr_pca,test_pca,type='response')>0.5)
 mean(pred_lr_pca==test_pca$default)
 ```
 
-## Part 3 Random Forest
+#### Random Forest
+
 ```{r}
 library(randomForest)
 set.seed(77)
-rate_tree=c()
-for (i in c(4,3)){
+rate_tree=NULL
+for (i in 3:6){
   rf=randomForest(default~.,data=credit[train,-1],mtry=i,importance=TRUE)
   pred_rf=predict(rf,newdata=credit[-train,-1])
   rate_tree=c(rate_tree,mean(pred_rf==credit[-train,]$default))
@@ -116,11 +168,10 @@ for (i in c(4,3)){
 rate_tree
 ```
 
-
 ```{r}
 set.seed(77)
-rate_tree_pca=c()
-for (i in c(4,3,2)){
+rate_tree_pca=NULL
+for (i in c(2:5)){
   rf_pca=randomForest(default~.,data=train_pca,mtry=i,importance=TRUE)
   pred_rf_pca=predict(rf_pca,newdata=test_pca)
   rate_tree_pca=c(rate_tree_pca,mean(pred_rf_pca==test_pca$default))
@@ -128,25 +179,34 @@ for (i in c(4,3,2)){
 rate_tree_pca
 ```
 
-## Part 4 Boosting? question about that---have NA values in result
+#### Boosting
+
 ```{r}
 library(gbm)
-set.seed(1)
+set.seed(3)
 credit$default=as.character(credit$default)
 boost=gbm(default~.,data=credit[train,-1],distribution="bernoulli",n.trees=5000,interaction.depth=4)
+summary(boost)
+plot(boost, i="PAY_0", type = 'response')
 ```
 
 ```{r}
-set.seed(99)
-pred_boost=predict(boost,newdata=credit[-train,-1],n.trees=5000)
+set.seed(3)
+pred_boost=1*(predict(boost, newdata=credit[-train,-1], n.trees=5000, type="response")>0.5)
 mean(pred_boost==credit[-train,]$default)
 ```
 
 ```{r}
-set.seed(77)
+set.seed(3)
 train_pca$default=as.character(train_pca$default)
 boost_pca=gbm(default~.,data=train_pca,distribution="bernoulli",n.trees=5000,interaction.depth=4)
-set.seed(77)
-pred_boost_pca=predict(boost_pca,newdata=test_pca,n.trees=5000)
+set.seed(3)
+pred_boost_pca=1*(predict(boost_pca,newdata=test_pca,n.trees=5000,type="response")>0.5)
 mean(pred_boost_pca==test_pca$default)
 ```
+
+#### Neural Network
+
+
+
+

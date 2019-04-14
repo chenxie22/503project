@@ -6,10 +6,32 @@ output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE,message=FALSE,warning=FALSE)
+knitr::opts_chunk$set(echo = FALSE,message=FALSE,warning=FALSE)
 ```
 
-## Data Exploration(need to modify)
+## Introduction
+
+Logistic regression is a very famous and widely applied technique in supervised learning. It is usually used to perform predictive analysis when the response variable is binary. 
+
+Logistic regression can also be approached by Bayesian modeling. In general, Bayesian analysis is more flexible, and it is proved to be superior for small samples. For Bayesian modeling, it can incorporate prior information. For example, if we want to know exactly which factors are most effective on the response, we can use shrinkage prior to implement variable selection. 
+
+In practice, predicting the exit status(binary: 0 or 1) of customers of a bank can be an application of the standard logistic regression as well as Bayesian approach. In this report, we delve into a data set about account status of a bank in three European countries. The objective is to predict if the clients will leave the bank based on part of their information, such as geography, gender and account balances, etc. In this process, we also explore the different effects of specific predictors to response variable in different models. 
+
+## Data Exploration
+
+The data set we use for this report is from Kaggle website. It has 10000 observations and 11 variables. The table below shows their names, types and descriptions. This data set has 6 numeric predictors and 4 categorical variables.
+ 
+ table 1: predictors and short descriptions
+
+The additional figure also shows the overall distribution of the binary response (Exited status). From the figure, we could find that a large proportion of clients keep their bank accounts, that number of exited status=0 is almost four times of number of clients who left the bank.
+
+ figure1: response
+
+In next step, we explore the relationship between predictors and the response variable. Bar plots of categorical predictors against response and pairwise plots as well as summary tables are displayed. We could gain a general knowledge of distributions for every categorical or numeric variable.
+
+ table2 figure2: categorical predictors summary and bar plots
+ 
+ table3 figure3, 4: quantitative predictors summary, box plot and hist, correlation
 
 ```{r}
 library(tidyr); library(MCMCpack); library(coda); library(EBglmnet); library(GGally); library(ggplot2)
@@ -51,6 +73,41 @@ p4=ggplot(c, aes(x=IsActiveMember,y=Exited,color=IsActiveMember)) +
   scale_color_manual(values=c("#999999", "#E69F00", "#56B4E9"))
 grid.arrange(p1, p2, p3,p4,nrow = 2)
 ```
+
+## Logistic Regression Model
+
+In this part, we will briefly introduce three logistic regression models, including standard one and two Bayesian models. In addition to the most significant reason that our response variable is binary, there are several advantages of logistic regression against other methods.  First, it can be interpreted more easily comapred with some complex models, while holding the same level of prediction precision. It helps to explain the relationship between the predictors and response variable. Next, the logistic regression can also handle mixed types of exploratory variables. Finally, logistic regression is an informative method that it provides both the size and
+the direction of the effects of its predictors.
+
+### Logistic Regression
+
+The basic assumption of standard logistic regression model is that the observations $y_1, ..., y_n$ are independent and following binomial distribution (1, $p_i$), where $p_i$ is the probability of response $y_i=1$. We could estimate the parameters $\beta$ ,which maximize $\Pi_{i=1}^n P(Y_i=y_i)$ using log-maximum likelihood approach. The statistical description is below:
+
+\[y_i\sim \textup{ Binomial }(1, p_i)\]
+\[\log(\frac{p_i}{1-p_i})=x_i^T\beta\]
+
+\[p(y_i;\beta)=(p_i)^{y_i}(1-p_i)^{1-y_i}\]
+
+
+\[p(y_1,...,y_n;\beta)=\prod_{i=1}^n(p_i)^{y_i}(1-p_i)^{1-y_i}\]
+Among them, $x_i$ is the i-th row of observation and $\beta$ are parameters.
+
+### Bayesian Logistic Regression
+
+In the standard logistic regression above, we treat $\beta$ as a column of unknown but fixed parameters. Actually, $\beta$ could be seen as a vector of random variables from the prospective of Bayesian analysis. 
+That is the preliminary thought of Bayesian analysis. In this case, we use data (model) and prior we have to estimate the posterior distribution of parameters. Basic Bayesian logistic regression method assumes that $\beta$ follows a multivariate normal prior distribution . 
+
+\[\textup{model: } y_i\sim \textup{ Binomial }(1, p_i)\]
+\[\log(\frac{p}{1-p})=X^T\beta\]
+\[\textup{prior: } \beta\sim N(\mathbf{\mu,\Sigma} )\]
+
+where $\mu$ is the mean vector of $\beta$ and $\Sigma$ is a covariance matrix.
+
+### to be continue
+
+
+
+
 
 ```{r}
 # Split into training & test sets

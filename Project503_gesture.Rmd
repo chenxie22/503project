@@ -32,6 +32,22 @@ g = rbind(dat0, dat1, dat2, dat3)
 heatmap.2(cor(g[,-1]), dendrogram='none', Rowv=FALSE, Colv=FALSE, trace='none')
 ```
 
+```{r}
+## boxplots
+library(ggplot2)
+library(gbm)
+ggplots=list()
+for (i in 1:64){
+  p=ggplot() +
+  geom_boxplot(aes(x=g[,65],y=g[,i],color=g[,65]),outlier.colour="black", outlier.shape=10,outlier.size=2, notch=FALSE)+
+  labs(title=sprintf('Boxplot of sensor %s signal %s',  ifelse(i%%8!=0,i%/%8+1,i/8), ifelse(i%%8!=0,i%%8,8) ) , x='Gesture',y='Sensor')+
+  scale_colour_discrete(name="Gesture")+
+  theme_classic()
+  ggplots[[i]]=p
+}
+
+```
+
 Split the dataset into training and test sets for the convenience of further analysis.
 
 ```{r}

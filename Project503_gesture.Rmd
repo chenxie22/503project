@@ -116,26 +116,38 @@ rate_qda
 
 ```{r}
 library(class)
-knn_train = NULL
-knn_test = NULL
-k_list = c(1:9,seq(10,100,10))
+knn_cv_error = NULL
+k_list = 1:20
 set.seed(3)
+knn.cv = function(k, t, nfolds=5) {
+  n_tr = nrow(t)
+  s = split(sample(n_tr), rep(1:nfolds, length=n_tr))
+  cv_error = 0
+  for(i in seq(nfolds)){
+    p.cv = knn(t[-s[[i]],-17], t[s[[i]],-17], t[-s[[i]],17], k=k)
+    cv_error = cv_error + mean(p.cv!=t[s[[i]],17])
+  }
+  cv_error = cv_error / nfolds
+}
 for(k in k_list) {
-    knn_tr = knn(g_new[train,-17], g_new[train,-17], g_new[train,17], k = k)
-    knn_t = knn(g_new[train,-17], g_new[-train,-17], g_new[train,17], k = k)
-    
-    knn_train = c(knn_train, mean(knn_tr == g_new[train,'V65']))
-    knn_test = c(knn_test, mean(knn_t == g_new[-train,'V65']))
+  knn_cv_error = c(knn_cv_error, knn.cv(k, g_new[train,]))
 }
 ```
 
 ```{r, fig.cap=cap, fig.align = "center"}
-cap = 'The training and test errors for each choice of K.'
-plot(k_list, knn_train, col='blue', type='l', ylim=c(0.68,1),
-     xlab='Number of Nearest Neighbors K', ylab='Error')
-lines(k_list, knn_test, col='red')
-points(k_list[which.max(knn_test)], max(knn_test))
-legend(70, 1, c('training error','test error'), col=c('blue','red'), lty=c(1,1))
+cap = 'The 5-fold Cross Validation Errors for Each Choice of K.'
+plot(k_list, knn_cv_error, type='l', ylim=c(0.13, 0.23),
+     xlab='Number of Nearest Neighbors K', ylab='Cross Validation Error')
+points(k_list[which.min(knn_cv_error)], min(knn_cv_error))
+text(k_list[which.min(knn_cv_error)], min(knn_cv_error)-0.02, "3")
+```
+
+Choose K=3.
+
+```{r}
+knn_pred = knn(g_new[train,-17], g_new[-train,-17], g_new[train,17], k=3)
+rate_knn = mean(knn_pred == g_new[-train,17])
+rate_knn
 ```
 
 ## SVM

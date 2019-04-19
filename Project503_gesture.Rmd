@@ -84,8 +84,8 @@ library(foreign); library(nnet)
 
 ```{r}
 set.seed(3)
-lr = multinom(V65~., data=g_new[train,])
-pred_lr = predict(lr, g_new[-train,])
+lr_fit = multinom(V65~., data=g_new[train,])
+pred_lr = predict(lr_fit, g_new[-train,])
 rate_lr=mean(pred_lr == g_new[-train,'V65'])
 rate_lr
 ```
@@ -94,9 +94,9 @@ rate_lr
 
 ```{r}
 library(MASS)
-lda.fit = lda(V65~., data=g_new[train,])
-lda.pred = predict(lda.fit, g_new[-train,])
-rate_lda=mean(lda.pred$class == g_new[-train,'V65'])
+lda_fit = lda(V65~., data=g_new[train,])
+lda_pred = predict(lda_fit, g_new[-train,])
+rate_lda=mean(lda_pred$class == g_new[-train,'V65'])
 rate_lda
 ```
 

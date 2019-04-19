@@ -32,6 +32,16 @@ g = rbind(dat0, dat1, dat2, dat3)
 heatmap.2(cor(g[,-1]), dendrogram='none', Rowv=FALSE, Colv=FALSE, trace='none')
 ```
 
+Split the dataset into training and test sets for the convenience of further analysis.
+
+```{r}
+# Split the dataset into training and test sets
+set.seed(77)
+train=sample(1:nrow(g),size=nrow(g)*0.8,replace=FALSE)
+```
+
+
+
 ## Logistic Regression
 
 ## Classification Tree

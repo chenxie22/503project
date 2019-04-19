@@ -48,19 +48,24 @@ for (i in 1:64){
 
 ```
 
-Split the dataset into training and test sets for the convenience of further analysis.
+## Variable Selection
 
 ```{r}
-# Split the dataset into training and test sets
 set.seed(77)
-train=sample(1:nrow(g),size=nrow(g)*0.8,replace=FALSE)
+rf=randomForest(V65~.,data=g,mtry=8,importance=TRUE)
+```
+
+```{r}
+varImpPlot(rf)
 ```
 
 
-
+### Split data
 ```{r}
-var_select = c(seq(7,63,8),seq(2,58,8))
-g_new = g[,c(var_select,65)]
+# Split the dataset into training and test sets
+set.seed(77)
+g_new=g[,c(seq(from=2,to=58,by=8),seq(from=7,to=63,by=8),65)]
+train=sample(1:nrow(g_new),size=nrow(g_new)*0.8,replace=FALSE)
 ```
 
 ## Logistic Regression
@@ -81,7 +86,8 @@ library(foreign); library(nnet)
 set.seed(3)
 lr = multinom(V65~., data=g_new[train,])
 pred_lr = predict(lr, g_new[-train,])
-mean(pred_lr == g_new[-train,'V65'])
+rate_lr=mean(pred_lr == g_new[-train,'V65'])
+rate_lr
 ```
 
 ## LDA
@@ -90,10 +96,21 @@ mean(pred_lr == g_new[-train,'V65'])
 library(MASS)
 lda.fit = lda(V65~., data=g_new[train,])
 lda.pred = predict(lda.fit, g_new[-train,])
-mean(lda.pred$class == g_new[-train,'V65'])
+rate_lda=mean(lda.pred$class == g_new[-train,'V65'])
+rate_lda
 ```
 
 ## QDA
+
+```{r}
+library(MASS)
+qda_fit = qda(V65~., data = g_new[train,])
+qda_pred= predict(qda_fit, g_new[-train,])$class
+table(qda_pred, g_new[-train,'V65'])
+rate_qda=mean(qda_pred==g_new[-train,'V65'])
+rate_qda
+```
+
 
 ## KNN
 
@@ -121,6 +138,45 @@ points(k_list[which.max(knn_test)], max(knn_test))
 legend(70, 1, c('training error','test error'), col=c('blue','red'), lty=c(1,1))
 ```
 
+## SVM
+Validation to choose the optimal parameters
+```{r}
+library(e1071)
+set.seed(77)
+valid=sample(train,size=floor(length(train)*0.2),replace=FALSE)
+train2=setdiff(train,valid)
+costv=c(0.01,0.1,1,10,100)
+gammav=c(0.5,1,2,3,4)
+validresult=cbind(expand.grid(costv,gammav),0)
+for (i in 1:nrow(validresult)){
+  svm_fit=svm(V65~.,data=g_new[train2,], kernel="radial", cost=validresult[i,1],gamma=validresult[i,2])
+  svm_pred=predict(svm_fit,g_new[valid,])
+  validresult[i,3]=mean(svm_pred==g_new[valid,"V65"])
+}
+```
+
+```{r}
+which.max(validresult[,3])
+```
+
+So, choose cost=1, gamma=0.5.
+
+```{r}
+svm_fit=svm(V65~.,data=g_new[train,], kernel="radial", cost=1,gamma=0.5)
+svm_pred=predict(svm_fit,g_new[-train,])
+rate_svm=mean(svm_pred==g_new[-train,"V65"])
+rate_svm
+```
+
 ## Random Forest
 
-## ???
+```{r}
+set.seed(77)
+rf_2=randomForest(V65~.,data=g_new[train,],mtry=4,importance=TRUE)
+rf_pred_2 = predict(rf_2,newdata=g_new[-train,])
+table(rf_pred_2,g_new$V65[-train])
+rate_tree_2=mean(rf_pred_2==g$V65[-train])
+rate_tree_2
+```
+
+

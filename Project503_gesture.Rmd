@@ -180,15 +180,37 @@ rate_svm=mean(svm_pred==g_new[-train,"V65"])
 rate_svm
 ```
 
-## Random Forest
+### Classification Tree
+```{r}
+library(tree)
+tree_fit=tree(V65~.,data=g_new[train,])
+tree_pred=predict(tree_fit,g_new[-train,],type="class")
+table(tree_pred,g_new$V65[-train])
+rate_tree=mean(tree_pred==g_new$V65[-train])
+rate_tree
+```
 
+
+### Random Forest
 ```{r}
 set.seed(77)
-rf_2=randomForest(V65~.,data=g_new[train,],mtry=4,importance=TRUE)
-rf_pred_2 = predict(rf_2,newdata=g_new[-train,])
-table(rf_pred_2,g_new$V65[-train])
-rate_tree_2=mean(rf_pred_2==g$V65[-train])
-rate_tree_2
+rf_fit=randomForest(V65~.,data=g_new[train,],mtry=4,importance=TRUE)
+rf_pred = predict(rf_fit,newdata=g_new[-train,])
+table(rf_pred,g_new$V65[-train])
+rate_rf=mean(rf_pred==g_new$V65[-train])
+rate_rf
 ```
+
+
+## Prediction Accuracy Comparison
+```{r}
+t2=data.frame(method=c("Logistic Regression","LDA","QDA","KNN","SVM","Classification Tree","Random Forest"),
+              pred=c(rate_lr,rate_lda,rate_qda,rate_knn,rate_svm,rate_tree,rate_rf))
+cap="Prediction Accuracy of several methods"
+knitr::kable(t2,format='pandoc',caption=cap,align='c',
+             col.names=c('Method','Prediction Accuracy'))
+```
+
+
 
 

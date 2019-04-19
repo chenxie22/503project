@@ -12,8 +12,8 @@ knitr::opts_chunk$set(echo = FALSE, message=FALSE,warning = FALSE,fig.align='cen
 ## Data Exploration
 ```{r}
 library(gplots); library(randomForest)
-t1=data.frame(name=c("V1-V8","V9-V16","V17-V24","V25-V32","V33-V40","V41-V48","V49-V56","V57-V64"),
-              type=c(rep("continuous",8)),des=c(paste0("Sensor",1:8)))
+t1=data.frame(name=c("V65","V1-V8","V9-V16","V17-V24","V25-V32","V33-V40","V41-V48","V49-V56","V57-V64"),
+              type=c("categorical",rep("continuous",8)),des=c("response",paste0("Sensor",1:8)))
 cap="Data Description"
 knitr::kable(t1,format='pandoc',caption=cap,align='c',
              col.names=c('Variables names','Type','Description'))

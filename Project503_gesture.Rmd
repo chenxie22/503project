@@ -58,9 +58,68 @@ train=sample(1:nrow(g),size=nrow(g)*0.8,replace=FALSE)
 
 
 
+```{r}
+var_select = c(seq(7,63,8),seq(2,58,8))
+g_new = g[,c(var_select,65)]
+```
+
 ## Logistic Regression
 
-## Classification Tree
+```{r}
+library(foreign); library(nnet)
+#min.model = multinom(V65~1, data=g[train,])
+#biggest = multinom(V65~., data=g[train,])
+#fwd1.model = step(min.model, scope=formula(biggest), direction="forward")
+#summary(fwd1.model)
+#pred_lr1 = predict(fwd1.model, g[-train,])
+#mean(pred_lr1 == g[-train,65])
+#fwd2.model = step(min.model, scope=formula(biggest), direction="forward", k=log(length(train)))
+#summary(fwd2.model)
+```
+
+```{r}
+set.seed(3)
+lr = multinom(V65~., data=g_new[train,])
+pred_lr = predict(lr, g_new[-train,])
+mean(pred_lr == g_new[-train,'V65'])
+```
+
+## LDA
+
+```{r}
+library(MASS)
+lda.fit = lda(V65~., data=g_new[train,])
+lda.pred = predict(lda.fit, g_new[-train,])
+mean(lda.pred$class == g_new[-train,'V65'])
+```
+
+## QDA
+
+## KNN
+
+```{r}
+library(class)
+knn_train = NULL
+knn_test = NULL
+k_list = c(1:9,seq(10,100,10))
+set.seed(3)
+for(k in k_list) {
+    knn_tr = knn(g_new[train,-17], g_new[train,-17], g_new[train,17], k = k)
+    knn_t = knn(g_new[train,-17], g_new[-train,-17], g_new[train,17], k = k)
+    
+    knn_train = c(knn_train, mean(knn_tr == g_new[train,'V65']))
+    knn_test = c(knn_test, mean(knn_t == g_new[-train,'V65']))
+}
+```
+
+```{r, fig.cap=cap, fig.align = "center"}
+cap = 'The training and test errors for each choice of K.'
+plot(k_list, knn_train, col='blue', type='l', ylim=c(0.68,1),
+     xlab='Number of Nearest Neighbors K', ylab='Error')
+lines(k_list, knn_test, col='red')
+points(k_list[which.max(knn_test)], max(knn_test))
+legend(70, 1, c('training error','test error'), col=c('blue','red'), lty=c(1,1))
+```
 
 ## Random Forest
 

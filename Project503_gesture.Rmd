@@ -147,6 +147,7 @@ text(k_list[which.min(knn_cv_error)], min(knn_cv_error)-0.01, "3")
 Choose K=3.
 
 ```{r}
+set.seed(3)
 knn_pred = knn(g_new[train,-17], g_new[-train,-17], g_new[train,17], k=3)
 rate_knn = mean(knn_pred == g_new[-train,17])
 table(knn_pred, g_new[-train,17])

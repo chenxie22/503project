@@ -87,8 +87,9 @@ train=sample(1:nrow(g_new),size=nrow(g_new)*0.8,replace=FALSE)
 ```{r}
 set.seed(3)
 lr_fit = multinom(V65~., data=g_new[train,])
-pred_lr = predict(lr_fit, g_new[-train,])
-rate_lr=mean(pred_lr == g_new[-train,'V65'])
+lr_pred = predict(lr_fit, g_new[-train,])
+rate_lr = mean(lr_pred == g_new[-train,'V65'])
+table(lr_pred, g_new[-train,'V65'])
 rate_lr
 ```
 
@@ -97,7 +98,8 @@ rate_lr
 ```{r}
 lda_fit = lda(V65~., data=g_new[train,])
 lda_pred = predict(lda_fit, g_new[-train,])
-rate_lda=mean(lda_pred$class == g_new[-train,'V65'])
+rate_lda = mean(lda_pred$class == g_new[-train,'V65'])
+table(lda_pred$class, g_new[-train,'V65'])
 rate_lda
 ```
 
@@ -105,9 +107,9 @@ rate_lda
 
 ```{r}
 qda_fit = qda(V65~., data = g_new[train,])
-qda_pred= predict(qda_fit, g_new[-train,])$class
+qda_pred = predict(qda_fit, g_new[-train,])$class
 table(qda_pred, g_new[-train,'V65'])
-rate_qda=mean(qda_pred==g_new[-train,'V65'])
+rate_qda = mean(qda_pred==g_new[-train,'V65'])
 rate_qda
 ```
 

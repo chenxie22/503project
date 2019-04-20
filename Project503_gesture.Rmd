@@ -148,6 +148,7 @@ Choose K=3.
 ```{r}
 knn_pred = knn(g_new[train,-17], g_new[-train,-17], g_new[train,17], k=3)
 rate_knn = mean(knn_pred == g_new[-train,17])
+table(knn_pred, g_new[-train,17])
 rate_knn
 ```
 

@@ -6,6 +6,6 @@ This is a class project.
 
 Data:
 
-The dataset is about the case of customers default payments in Taiwan from April to October in 2005. It has a binary variable, default payment (Yes = 1, No = 0), as the response variable and the following 23 variables as explanatory variables.
+The dataset is about the recordings of human hand muscle activity corresponding to four different hand gestures.
 
-Source: http://archive.ics.uci.edu/ml/datasets/default+of+credit+card+clients
+Source: https://www.kaggle.com/kyr7plus/emg-4#0.csv

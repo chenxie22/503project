@@ -10,8 +10,9 @@ knitr::opts_chunk$set(echo = FALSE, message=FALSE,warning = FALSE,fig.align='cen
 ```
 
 ## Data Exploration
+
 ```{r}
-library(gplots); library(randomForest)
+# Data Description
 t1=data.frame(name=c("V65","V1-V8","V9-V16","V17-V24","V25-V32","V33-V40","V41-V48","V49-V56","V57-V64"),
               type=c("categorical",rep("continuous",8)),des=c("response",paste0("Sensor",1:8)))
 cap="Data Description"
@@ -19,8 +20,10 @@ knitr::kable(t1,format='pandoc',caption=cap,align='c',
              col.names=c('Variables names','Type','Description'))
 ```
 
-
 ```{r}
+# Load libraries and datasets
+library(gplots); library(randomForest); library(ggplot2); library(gbm); library(foreign); library(nnet)
+library(MASS); library(class); library(e1071); library(tree)
 dat0 = read.csv("0.csv", header = F)
 dat1 = read.csv("1.csv", header = F)
 dat2 = read.csv("2.csv", header = F)
@@ -34,8 +37,6 @@ heatmap.2(cor(g[,-1]), dendrogram='none', Rowv=FALSE, Colv=FALSE, trace='none')
 
 ```{r}
 ## boxplots
-library(ggplot2)
-library(gbm)
 ggplots=list()
 for (i in 1:64){
   p=ggplot() +
@@ -60,7 +61,7 @@ varImpPlot(rf)
 ```
 
 
-### Split data
+## Split data
 ```{r}
 # Split the dataset into training and test sets
 set.seed(77)
@@ -68,10 +69,11 @@ g_new=g[,c(seq(from=2,to=58,by=8),seq(from=7,to=63,by=8),65)]
 train=sample(1:nrow(g_new),size=nrow(g_new)*0.8,replace=FALSE)
 ```
 
-## Logistic Regression
+## Classification Methods
+
+### Logistic Regression
 
 ```{r}
-library(foreign); library(nnet)
 #min.model = multinom(V65~1, data=g[train,])
 #biggest = multinom(V65~., data=g[train,])
 #fwd1.model = step(min.model, scope=formula(biggest), direction="forward")
@@ -90,20 +92,18 @@ rate_lr=mean(pred_lr == g_new[-train,'V65'])
 rate_lr
 ```
 
-## LDA
+### LDA
 
 ```{r}
-library(MASS)
 lda_fit = lda(V65~., data=g_new[train,])
 lda_pred = predict(lda_fit, g_new[-train,])
 rate_lda=mean(lda_pred$class == g_new[-train,'V65'])
 rate_lda
 ```
 
-## QDA
+### QDA
 
 ```{r}
-library(MASS)
 qda_fit = qda(V65~., data = g_new[train,])
 qda_pred= predict(qda_fit, g_new[-train,])$class
 table(qda_pred, g_new[-train,'V65'])
@@ -112,10 +112,9 @@ rate_qda
 ```
 
 
-## KNN
+### KNN
 
 ```{r}
-library(class)
 knn_cv_error = NULL
 k_list = 1:20
 set.seed(3)
@@ -150,10 +149,9 @@ rate_knn = mean(knn_pred == g_new[-train,17])
 rate_knn
 ```
 
-## SVM
+### SVM
 Validation to choose the optimal parameters
 ```{r}
-library(e1071)
 set.seed(77)
 valid=sample(train,size=floor(length(train)*0.2),replace=FALSE)
 train2=setdiff(train,valid)
@@ -182,7 +180,6 @@ rate_svm
 
 ### Classification Tree
 ```{r}
-library(tree)
 tree_fit=tree(V65~.,data=g_new[train,])
 tree_pred=predict(tree_fit,g_new[-train,],type="class")
 table(tree_pred,g_new$V65[-train])

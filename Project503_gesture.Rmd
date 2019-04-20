@@ -29,6 +29,7 @@ dat1 = read.csv("1.csv", header = F)
 dat2 = read.csv("2.csv", header = F)
 dat3 = read.csv("3.csv", header = F)
 g = rbind(dat0, dat1, dat2, dat3)
+g$V65 = as.factor(g$V65)
 ```
 
 ```{r}

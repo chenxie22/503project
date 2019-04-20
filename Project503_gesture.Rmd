@@ -1,13 +1,14 @@
 ---
-title: "Stats 503 Project: Gesture"
+title: "Stats 503 Project: Credit Default"
 author: "Chen Xie, Xun Wang, Xinye, Jiang"
 date: "`r format(Sys.time(), '%B %d, %Y')`"
 output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE, message=FALSE,warning = FALSE,fig.align='center')
+knitr::opts_chunk$set(echo = FALSE, message=FALSE,warning = FALSE,fig.align='center',eval=FALSE)
 ```
+
 ## 1. Introduction 
 
 ## 2. Data Exploration
@@ -25,8 +26,8 @@ g$V65=as.factor(g$V65)
 
 ```{r}
 ## Libraries
-library(ggplot2);library(GGally);library(gbm);library(reshape2)
-library(gplots); library(randomForest)
+library(ggplot2);library(GGally);library(gbm);library(reshape2);library(gplots)
+library(dplyr)
 
 ## Summary table 1
 t1=data.frame(name=c("V65","V1-V8","V9-V16","V17-V24","V25-V32","V33-V40","V41-V48","V49-V56","V57-V64"),
@@ -141,32 +142,33 @@ for (i in c(1,7)) {
 
 ```
 
-
-## Variable Selection
-
 ```{r}
-set.seed(77)
-rf=randomForest(V65~.,data=g,mtry=8,importance=TRUE)
+ggplot(g,aes(color=V65,x=V2,y=V7)) +
+  geom_density_2d(mapping = NULL, data = NULL, stat = "density2d",
+  position = "identity", lineend = "butt", linejoin = "round",
+  linemitre = 10, na.rm = FALSE, show.legend = NA,
+  inherit.aes = TRUE)+
+  labs(title='Contour of Density of V2 and V7')+
+  scale_colour_discrete(name="Gesture")+
+  theme_classic()
 ```
 
+
+## 3. Variable Selection
+
 ```{r}
+## Perform Variable Selection
+## by random forest and check the importance of variables
+set.seed(77)
+library(randomForest)
+rf=randomForest(V65~.,data=g,mtry=8,importance=TRUE)
 varImpPlot(rf)
 ```
 
-
-## Split data
 ```{r}
-# Split the dataset into training and test sets
-set.seed(77)
-g_new=g[,c(seq(from=2,to=58,by=8),seq(from=7,to=63,by=8),65)]
-train=sample(1:nrow(g_new),size=nrow(g_new)*0.8,replace=FALSE)
-```
+## Variable Selection by stepwise logistic regression based on AIC/BIC
 
-## Classification Methods
 
-### Logistic Regression
-
-```{r}
 #min.model = multinom(V65~1, data=g[train,])
 #biggest = multinom(V65~., data=g[train,])
 #fwd1.model = step(min.model, scope=formula(biggest), direction="forward")
@@ -177,58 +179,82 @@ train=sample(1:nrow(g_new),size=nrow(g_new)*0.8,replace=FALSE)
 #summary(fwd2.model)
 ```
 
+## 4. Classification Methods
+
 ```{r}
+## Split the dataset into training and test sets
+set.seed(77)
+g_new=g[,c(seq(from=2,to=58,by=8),seq(from=7,to=63,by=8),65)]
+train=sample(1:nrow(g_new),size=nrow(g_new)*0.8,replace=FALSE)
+```
+
+
+### 4.1 Logistic Regression
+
+
+```{r}
+## Multinomal Logistic Regression
 set.seed(3)
+library(nnet)
 lr_fit = multinom(V65~., data=g_new[train,])
 lr_pred = predict(lr_fit, g_new[-train,])
-rate_lr = mean(lr_pred == g_new[-train,'V65'])
-table(lr_pred, g_new[-train,'V65'])
-rate_lr
+accuracy_lr = mean(lr_pred == g_new[-train,'V65'])
 ```
 
-### LDA
+### 4.2 LDA
 
 ```{r}
+## LDA
+library(MASS)
 lda_fit = lda(V65~., data=g_new[train,])
 lda_pred = predict(lda_fit, g_new[-train,])
-rate_lda = mean(lda_pred$class == g_new[-train,'V65'])
-table(lda_pred$class, g_new[-train,'V65'])
-rate_lda
+accuracy_lda = mean(lda_pred$class == g_new[-train,'V65'])
 ```
 
-### QDA
+### 4.3 QDA
 
 ```{r}
+## QDA
 qda_fit = qda(V65~., data = g_new[train,])
 qda_pred = predict(qda_fit, g_new[-train,])$class
-table(qda_pred, g_new[-train,'V65'])
-rate_qda = mean(qda_pred==g_new[-train,'V65'])
-rate_qda
+accuracy_qda = mean(qda_pred==g_new[-train,'V65'])
 ```
 
 
-### KNN
+
+### 4.4 KNN
 
 ```{r}
+library(class)
+## Initialize
 knn_cv_error = NULL
+## Possible k's
 k_list = 1:20
 set.seed(3)
+## Cross Validation function for knn
 knn.cv = function(k, t, nfolds=5) {
-  n_tr = nrow(t)
-  s = split(sample(n_tr), rep(1:nfolds, length=n_tr))
+  n_train = nrow(t)
+  ## Split training and validation sets
+  s = split(sample(n_train), rep(1:nfolds, length=n_train))
   cv_error = 0
   for(i in seq(nfolds)){
-    p.cv = knn(t[-s[[i]],-17], t[s[[i]],-17], t[-s[[i]],17], k=k)
-    cv_error = cv_error + mean(p.cv!=t[s[[i]],17])
+    ## Computing validation errors
+    knn_cv_pred = knn(t[-s[[i]],-17], t[s[[i]],-17], t[-s[[i]],17], k=k)
+    cv_error = cv_error + mean(knn_cv_pred!=t[s[[i]],17])
   }
   cv_error = cv_error / nfolds
 }
+
+## Perform cross validation
+## choose k=3
 for(k in k_list) {
   knn_cv_error = c(knn_cv_error, knn.cv(k, g_new[train,]))
 }
 ```
 
+
 ```{r, fig.cap=cap, fig.align = "center"}
+## Plot validation errors
 cap = 'The 5-fold Cross Validation Errors for Each Choice of K.'
 plot(k_list, knn_cv_error, type='l', ylim=c(0.13, 0.23),
      xlab='Number of Nearest Neighbors K', ylab='Cross Validation Error')
@@ -239,72 +265,84 @@ text(k_list[which.min(knn_cv_error)], min(knn_cv_error)-0.01, "3")
 Choose K=3.
 
 ```{r}
+## Predicting by knn and k=3
 set.seed(3)
 knn_pred = knn(g_new[train,-17], g_new[-train,-17], g_new[train,17], k=3)
-rate_knn = mean(knn_pred == g_new[-train,17])
-table(knn_pred, g_new[-train,17])
-rate_knn
+accuracy_knn = mean(knn_pred == g_new[-train,17])
 ```
 
-### SVM
+### 4.5 SVM
+
 Validation to choose the optimal parameters
+
 ```{r}
+## SVM
 set.seed(77)
+library(e1071)
+## The validation set 
 valid=sample(train,size=floor(length(train)*0.2),replace=FALSE)
 train2=setdiff(train,valid)
+## Possible parameters
 costv=c(0.01,0.1,1,10,100)
 gammav=c(0.5,1,2,3,4)
-validresult=cbind(expand.grid(costv,gammav),0)
-for (i in 1:nrow(validresult)){
-  svm_fit=svm(V65~.,data=g_new[train2,], kernel="radial", cost=validresult[i,1],gamma=validresult[i,2])
-  svm_pred=predict(svm_fit,g_new[valid,])
-  validresult[i,3]=mean(svm_pred==g_new[valid,"V65"])
+svm_v_error=cbind(expand.grid(costv,gammav),0)
+## Perform validation set method to choose parameters
+for (i in 1:nrow(svm_v_error)){
+  svm_v_fit=svm(V65~.,data=g_new[train2,], kernel="radial", cost=svm_v_error[i,1],gamma=svm_v_error[i,2])
+  svm_v_pred=predict(svm_v_fit,g_new[valid,])
+  svm_v_error[i,3]=mean(svm_v_pred!=g_new[valid,"V65"])
 }
-```
 
-```{r}
-which.max(validresult[,3])
+svm_v_error[which.min(svm_v_error[,3]),]
 ```
 
 So, choose cost=1, gamma=0.5.
 
 ```{r}
+## Fit svm with cost=1, gamma=0.5
 svm_fit=svm(V65~.,data=g_new[train,], kernel="radial", cost=1,gamma=0.5)
 svm_pred=predict(svm_fit,g_new[-train,])
-rate_svm=mean(svm_pred==g_new[-train,"V65"])
-rate_svm
+accuracy_svm=mean(svm_pred==g_new[-train,"V65"])
+accuracy_svm
 ```
 
-### Classification Tree
+### 4.6 Classification Tree
 ```{r}
+## Classification Tree
+library(tree)
 tree_fit=tree(V65~.,data=g_new[train,])
 tree_pred=predict(tree_fit,g_new[-train,],type="class")
-table(tree_pred,g_new$V65[-train])
-rate_tree=mean(tree_pred==g_new$V65[-train])
-rate_tree
+accuracy_tree=mean(tree_pred==g_new$V65[-train])
+```
+
+```{r}
+plot(tree_fit)
+text(tree_fit,pretty=0,cex=0.5)
+tree_fit
 ```
 
 
-### Random Forest
+### 4.7 Random Forest
+
 ```{r}
 set.seed(77)
 rf_fit=randomForest(V65~.,data=g_new[train,],mtry=4,importance=TRUE)
 rf_pred = predict(rf_fit,newdata=g_new[-train,])
-table(rf_pred,g_new$V65[-train])
-rate_rf=mean(rf_pred==g_new$V65[-train])
-rate_rf
+accuracy_rf=mean(rf_pred==g_new$V65[-train])
 ```
 
 
-## Prediction Accuracy Comparison
+## 5 Prediction Accuracy Comparison
+
 ```{r}
-t2=data.frame(method=c("Logistic Regression","LDA","QDA","KNN","SVM","Classification Tree","Random Forest"),
-              pred=c(rate_lr,rate_lda,rate_qda,rate_knn,rate_svm,rate_tree,rate_rf))
+t2=data.frame(method=c("Logistic Regression","LDA","QDA","KNN","SVM (radial)","Classification Tree","Random Forest"),
+              pred=c(accuracy_lr,accuracy_lda,accuracy_qda,accuracy_knn,accuracy_svm,accuracy_tree,accuracy_rf))
 cap="Prediction Accuracy of several methods"
 knitr::kable(t2,format='pandoc',caption=cap,align='c',
              col.names=c('Method','Prediction Accuracy'))
 ```
 
 
+## 6 Conclusion and Discussion 
 
 

@@ -426,7 +426,7 @@ sensitivity3_dist = apply(predtest3, 2, function(x) sum(x*ytest))/sum(ytest)
 
 ## Comparison
 
-### Accuracy
+### Logloss
 
 ```{r}
 # Compare Predictive logloss and plot

@@ -27,7 +27,8 @@ g$V65=as.factor(g$V65)
 ```{r}
 ## Libraries
 library(ggplot2);library(GGally);library(gbm);library(reshape2);library(gplots)
-library(dplyr)
+library(dplyr);library(e1071);library(tree);library(class);library(MASS);library(nnet)
+library(randomForest);library(foreign);
 
 ## Summary table 1
 t1=data.frame(name=c("V65","V1-V8","V9-V16","V17-V24","V25-V32","V33-V40","V41-V48","V49-V56","V57-V64"),

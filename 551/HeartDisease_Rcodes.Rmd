@@ -1,7 +1,7 @@
 ---
 title: "551 Project Rcodes"
 author: "Chen Xie, Xinye Jiang, Xun Wang"
-date: "2019/4/13"
+date: "2019/4/29"
 output: pdf_document
 ---
 
@@ -429,14 +429,14 @@ sensitivity3_dist = apply(predtest3, 2, function(x) sum(x*ytest))/sum(ytest)
 ### Accuracy
 
 ```{r}
-# Compare Predictive Accuracy and plot
-## png('accuracy.png')
-plot(density(accuracy2_dist), main="Predictive Accuracy", xlab="predictive accuracy", col="red")
-lines(density(accuracy3_dist), col="blue")
-abline(v=accuracy1, col="black")
-abline(v=accuracy2, col="red")
-abline(v=accuracy3, col="blue")
-legend(0.5, 6, c("Original","N-IG","N-E-G"), col=c("black","red","blue"), lty=c(1,1,1))
+# Compare Predictive logloss and plot
+## png('logloss.png')
+plot(density(logloss3_dist), main="Density of Predictive Logloss", xlab="Logloss", col="blue")
+lines(density(logloss2_dist), col="red")
+abline(v=logloss1, col="black",lty=2)
+abline(v=logloss2, col="red",lty=2)
+abline(v=logloss3, col="blue",lty=2)
+legend(4.5, 0.18, c("Original","N-IG","N-E-G"), col=c("black","red","blue"), lty=c(1,1,1))
 ## dev.off()
 ```
 
@@ -445,11 +445,11 @@ legend(0.5, 6, c("Original","N-IG","N-E-G"), col=c("black","red","blue"), lty=c(
 ```{r}
 # Compare Sensitivity and plot
 ## png('sensitivity.png')
-plot(density(sensitivity2_dist), main="Sensitivity", xlab="sensitivity", col="red")
+plot(density(sensitivity2_dist), main="Density of Sensitivity", xlab="sensitivity", col="red")
 lines(density(sensitivity3_dist), col="blue")
-abline(v=sensitivity1, col="black")
-abline(v=mean(sensitivity2_dist), col="red")
-abline(v=mean(sensitivity3_dist), col="blue")
+abline(v=sensitivity1, col="black",lty=2)
+abline(v=mean(sensitivity2_dist), col="red",lty=2)
+abline(v=mean(sensitivity3_dist), col="blue",lty=2)
 legend(0.35, 5, c("Original","N-IG","N-E-G"), col=c("black","red","blue"), lty=c(1,1,1))
 ## dev.off()
 ```

@@ -246,7 +246,7 @@ table(ytest, 1*(predtest1>0.5))
 ### Predictive Accuracy
 ###accuracy1 = mean(predtest1==ytest)
 ### log loss
-sum(-log(predtest1[ytest==1]))+sum(-log(1-predtest1[ytest==0]))
+logloss1=sum(-log(predtest1[ytest==1]))+sum(-log(1-predtest1[ytest==0]))
 ### Predictive Sensitivity
 sensitivity1 = sum(predtest1*ytest)/sum(ytest)
 ```
@@ -320,7 +320,8 @@ predtest2 = matrix(rbinom(5000*30, 1, prob=prob2), nrow=30)
 ### point estimation of accuracy2_dist
 ### accuracy2= mean(accuracy2_dist)
 ### log loss
-sum(-log(prob2[ytest==1]))+sum(-log(1-prob2[ytest==0]))
+logloss2_dist=sapply(1:5000,function(i){sum(-log(prob2[ytest==1,i]))+sum(-log(1-prob2[ytest==0,i]))})
+logloss2=mean(logloss2_dist)
 ### predictive sensitivity
 sensitivity2_dist = apply(predtest2, 2, function(x) sum(x*ytest))/sum(ytest)
 ```
@@ -417,7 +418,8 @@ predtest3 = matrix(rbinom(5000*30, 1, prob=prob3), nrow=30)
 ### point estimation of accuracy2_dist
 ### accuracy3= mean(accuracy3_dist)
 ### log loss
-sum(-log(prob3[ytest==1]))+sum(-log(1-prob3[ytest==0]))
+logloss3_dist=sapply(1:5000,function(i){sum(-log(prob3[ytest==1,i]))+sum(-log(1-prob3[ytest==0,i]))})
+logloss3=mean(logloss3_dist)
 ### predictive sensitivity
 sensitivity3_dist = apply(predtest3, 2, function(x) sum(x*ytest))/sum(ytest)
 ```

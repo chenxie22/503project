@@ -3,7 +3,10 @@ title: "551 Project, Team 10"
 author: "Chen Xie, Xinye Jiang, Xun Wang"
 date: "2019/4/13"
 output:
-  pdf_document: default
+  pdf_document: 
+    fig_caption: yes
+    keep_tex: yes
+header-includes: \usepackage{float}
 ---
 
 ```{r setup, include=FALSE}
@@ -20,7 +23,7 @@ In practice, predicting a binary response can be an application of the standard 
 
 ## 2. Data Exploration
 
-### Tables
+The dataset `heart.csv` is from UCI Machine Learning Repository. It has 303 observations and 14 variables in total. Every row is associated with a patient. The response is `target`, i.e. whether the angiographic result is present or absent of a >50% diameter narrowing (presence=1, absence=0). Because data in this dataset are all tested in a noninvasive way and are interpreted without knowledge of other test data nor historical results, there isn't any work-up bias, i.e. verification bias, during the data collection process. See more information about response and predictors in data description table below.
 
 ```{r}
 ## Libraries:
@@ -28,6 +31,7 @@ library(coda);
 library(ggplot2);library(gbm);library(GGally)
 library(dplyr);library(tidyr)
 library(knitr);library(kableExtra)
+library(reshape2)
 ## Read Data:
 h = read.csv("heart.csv")
 h$sex=as.factor(h$sex)
@@ -44,15 +48,170 @@ names(h)=c('age',names(h)[-1])
 ```
  
  
-```{r,out.height='80%',out.width='80%',fig.align='center'}
-## Insert figure of description table of variables:
-knitr::include_graphics(c("dataset.png"))
+```{r,out.height='80%',out.width='80%'}
+tbl0=tibble('Variables'=c('target','age','sex','cp','trestbps','chol','fbs',
+                          'restecg','thelach','exang','oldpeak','slope','ca','thal'),
+            'Type'=c('Binary','Continous','Binary','Categorical','Continous','Continous','Binary',
+                     'Binary','Continous','Binary','Continous','Ordinal','Ordinal','Categorical'),
+            'Collection'=c('Dependent Variable','Clinical Variable','Clinical Variable',
+                           'Clinical Variable','Clinical Variable','Routine test',
+                           'Routine test','Routine test','Noninvasive test','Noninvasive test',
+                           'Noninvasive test','Noninvasive test','Noninvasive test',
+                           'Noninvasive test'),
+            'Description'=c('angiographic result of the presence or absence of a >50% diameter narrowing; presence = 1; absence = 0.','age in years','1=male; 0=female','chest pain type; 0=typical angina; 1=atypical angina; 2=non-anginal; 3=asymptomatic','systolic/resting blood pressure (in mm Hg on admission to the hospital)','serum cholestoral in mg/dl','(fasting blood sugar > 120 mg/dl) (1 = true; 0 = false)',"resting electrocardiographic results; 0=normal; 1=having ST-T wave abnormality; 2=showing probable or definite left ventricular hypertrophy by Estes' criteria",'maximum heart rate achieved','exercise induced angina (1 = yes; 0 = no)','ST depression induced by exercise relative to rest','the slope of the peak exercise ST segment; 0=upsloping; 1=flat; 2=downsloping','number of major vessels (0-3) colored by flourosopy','exercise thallium scintigraphic defects; 3=normal; 6=fixed defect; 7=reversable defect'))
+tbl0 %>%
+  kable("latex", booktabs = T,
+        caption = 'Data Description') %>%
+  kable_styling(latex_options = c("striped", "hold_position","scale_down"))%>%
+  column_spec(4,width='32em')
 ```
 
-### data exploration
+### 2.1 Numeric summary
+Because our dataset is very clean, there isn't any missing value need to deal with. We simply show numeric summary of continous and categorical variables separately in two tables below. From the tables, we could see that there are 5 continous independent variables and 8 categorical ones.
 
-### Data Preparation
-The first column is the intercept variable.
+```{r}
+## Generate Summary table for continuous variables:
+do.call(cbind, lapply(h[,c(1,4,5,8,10)],summary)) %>%
+  kable("latex", booktabs = T,
+        caption='Summary of Continous Variables') %>%
+  kable_styling(latex_options = c("striped", "hold_position"))
+## Genrate Summary table for categorical variables:
+tbl1<-tibble('target'=c('0: 138','1: 165','','',''),
+             'sex'=c('female: 96','male: 207','','',''), 
+             'cp'=c('0: 143', '1: 50','2: 87','3: 23',''), 
+             'fbs'=c('0: 258', '1: 45 ','','',''),
+             'restecg'=c('0: 147', '1: 152','2: 4','',''),
+             'exang'=c('0: 204', '1: 99','','',''),
+             'slope'=c('0: 21','1: 140', '2: 142','',''),
+             'ca'=c('0: 175','1: 65','2: 38','3: 20','4: 5'),
+             'thal'=c('0: 2','1: 18','2: 166','3: 117',''))
+tbl1 %>%
+  kable("latex", booktabs = T,
+        caption = 'Summary of Categorical Variables') %>%
+  kable_styling(latex_options = c("striped", "hold_position")) 
+```
+
+### 2.2 Visualization
+
+In the next step, let's have a direct look at heart disease dataset through visualization. Here is the pairwise scatterplots and histograms of continous varibales. These variables `age`,`trestbps`,`chol`,`thelach`,`oldpeak` display weak correlations between each of them.
+
+```{r,out.height='70%',out.width='70%',fig.align='center',fig.cap='Pairwise scatterplots and histogram of continous variables.',fig.pos='H'}
+## Pair plot including scatterplot, correation, histograms of continuous variables:
+#png("pairs.png")
+h_pairs=ggpairs(h[c(1,4,5,8,10)],axisLabels = "none",
+        upper = list(continuous = "points", combo = "dot"),
+        lower = list(continuous = "cor", combo = "dot"),
+        diag = list(continuous = "barDiag")) + 
+  theme_bw()
+h_pairs
+#dev.off()
+```
+
+In addition, we also explore boxplots of continous variables against target. It is noticed that median ages for both targets response are above 50 years old.
+
+```{r,out.height='70%',out.width='70%',fig.align='center',fig.cap='Boxplots of continous variables.',fig.pos='H'}
+## Generate boxplots of continuous variables by target(response):
+p1=ggplot(h, aes(x=target,y=age,group=target)) +
+  geom_boxplot(outlier.colour="black", outlier.shape=10,outlier.size=2, notch=FALSE,color=c("#E69F00", "#56B4E9"))
+p2=ggplot(h, aes(y=trestbps,x=target,group=target)) +
+  geom_boxplot(outlier.colour="black", outlier.shape=10,outlier.size=2, notch=FALSE,color=c("#E69F00", "#56B4E9"))
+p3=ggplot(h, aes(y=chol,x=target,group=target)) +
+  geom_boxplot(outlier.colour="black", outlier.shape=10,outlier.size=2, notch=FALSE,color=c("#E69F00", "#56B4E9"))
+p4=ggplot(h, aes(y=thalach,x=target,group=target)) +
+  geom_boxplot(outlier.colour="black", outlier.shape=10,outlier.size=2, notch=FALSE,color=c("#E69F00", "#56B4E9"))
+p5=ggplot(h, aes(y=oldpeak,x=target,group=target)) +
+  geom_boxplot(outlier.colour="black", outlier.shape=10,outlier.size=2, notch=FALSE,color=c("#E69F00", "#56B4E9"))
+#png("boxplot.png")
+grid.arrange(p1, p2, p3,p4,p5, nrow = 1)
+#dev.off()
+```
+
+We also have a quick look at the bar charts of categorical variables against response variable. As we could see, response `target` is relatively balanced, while number of male (sex=1) is far more than the number of female.
+
+```{r,out.height='70%',out.width='80%',fig.align='center',fig.cap='Bar charts of categorical variables.',fig.pos='H'}
+## Barcharst of categorical variables by the response varaibles(target):
+bp1<-ggplot(data=as.data.frame(table(h$target,h$sex)), aes(x=Var2, y=Freq, fill=Var1)) +
+  geom_bar(stat="identity", position=position_dodge())+
+  geom_text(aes(label=Freq), vjust=1.6, color="black",
+            position = position_dodge(0.9), size=2.5)+
+  scale_fill_brewer(palette="Paired")+
+  labs(x='sex', y='Frequency',fill='target',title='Barchart of sex')+
+  theme_minimal()
+bp2<-ggplot(data=as.data.frame(table(h$target,h$cp)), aes(x=Var2, y=Freq, fill=Var1)) +
+  geom_bar(stat="identity", position=position_dodge())+
+  geom_text(aes(label=Freq), vjust=1.6, color="black",
+            position = position_dodge(0.9), size=2.5)+
+  scale_fill_brewer(palette="Paired")+
+  labs(x='cp', y='Frequency',fill='target',title='Barchart of cp')+
+  theme_minimal()
+bp3<-ggplot(data=as.data.frame(table(h$target,h$fbs)), aes(x=Var2, y=Freq, fill=Var1)) +
+  geom_bar(stat="identity", position=position_dodge())+
+  geom_text(aes(label=Freq), vjust=1.6, color="black",
+            position = position_dodge(0.9), size=2.5)+
+  scale_fill_brewer(palette="Paired")+
+  labs(x='fbs', y='Frequency',fill='target',title='Barchart of fbs')+
+  theme_minimal()
+bp4<-ggplot(data=as.data.frame(table(h$target,h$restecg)), aes(x=Var2, y=Freq, fill=Var1)) +
+  geom_bar(stat="identity", position=position_dodge())+
+  geom_text(aes(label=Freq), vjust=1.6, color="black",
+            position = position_dodge(0.9), size=2.5)+
+  scale_fill_brewer(palette="Paired")+
+  labs(x='restecg', y='Frequency',fill='target',title='Barchart of restecg')+
+  theme_minimal()
+bp5<-ggplot(data=as.data.frame(table(h$target,h$exang)), aes(x=Var2, y=Freq, fill=Var1)) +
+  geom_bar(stat="identity", position=position_dodge())+
+  geom_text(aes(label=Freq), vjust=1.6, color="black",
+            position = position_dodge(0.9), size=2.5)+
+  scale_fill_brewer(palette="Paired")+
+  labs(x='exang', y='Frequency',fill='target',title='Barchart of exang')+
+  theme_minimal()
+bp6<-ggplot(data=as.data.frame(table(h$target,h$slope)), aes(x=Var2, y=Freq, fill=Var1)) +
+  geom_bar(stat="identity", position=position_dodge())+
+  geom_text(aes(label=Freq), vjust=1.6, color="black",
+            position = position_dodge(0.9), size=2.5)+
+  scale_fill_brewer(palette="Paired")+
+  labs(x='slope', y='Frequency',fill='target',title='Barchart of slope')+
+  theme_minimal()
+bp7<-ggplot(data=as.data.frame(table(h$target,h$ca)), aes(x=Var2, y=Freq, fill=Var1)) +
+  geom_bar(stat="identity", position=position_dodge())+
+  geom_text(aes(label=Freq), vjust=1.6, color="black",
+            position = position_dodge(0.9), size=2.5)+
+  scale_fill_brewer(palette="Paired")+
+  labs(x='ca', y='Frequency',fill='target',title='Barchart of ca')+
+  theme_minimal()
+bp8<-ggplot(data=as.data.frame(table(h$target,h$thal)), aes(x=Var2, y=Freq, fill=Var1)) +
+  geom_bar(stat="identity", position=position_dodge())+
+  geom_text(aes(label=Freq), vjust=1.6, color="black",
+            position = position_dodge(0.9), size=2.5)+
+  scale_fill_brewer(palette="Paired")+
+  labs(x='thal', y='Frequency',fill='target',title='Barchart of thal')+
+  theme_minimal()
+bp9<-ggplot(data=as.data.frame(table(h$target)), aes(x=Var1, y=Freq,fill=Var1)) +
+  geom_bar(stat="identity", position=position_dodge())+
+  geom_text(aes(label=Freq), vjust=1.6, color="black",
+            position = position_dodge(0.9), size=2.5)+
+  scale_fill_brewer(palette="Paired")+
+  labs(x='target', y='Frequency',fill='target',title='Barchart of target')+
+  theme_minimal()
+#png("barchart.png")
+grid.arrange(bp9,bp1,bp2,bp3,bp4,bp5,bp6,bp7,bp8, nrow = 3)
+#dev.off()
+#png("response.png")
+#ggplot(data=as.data.frame(table(h$target)), aes(x=Var1, y=Freq,fill=Var1)) +
+  #geom_bar(stat="identity", position=position_dodge())+
+  #geom_text(aes(label=Freq), vjust=1.6, color="black",
+            #position = position_dodge(0.9), size=5)+
+  #scale_fill_brewer(palette="Paired")+
+  #labs(x='target', y='Frequency',fill='target',title='Barchart of target')+
+  #theme_minimal()
+#dev.off()
+```
+
+### 2.3 Data Preparation
+
+Before we perform logistic regression to dataset, we need to prepare our data first. First, we turn categorical variables into dummy variables at one step by using function `model.matrix`. The first column of result matrix is the intercept 1. As a result, the number of independent variables grow from 13 to 23.
+
+Inaddition, we randomly split the whole dataset into training and test part at a rate around 8:2. Our training datset has 273 observations and test dataset has 30 observations.
 ```{r}
 ## Generate dummy variables for categorical data:
 H = model.matrix(target~., data=h)
@@ -96,11 +255,14 @@ name = names(beta1)
 ci1 = data.frame(lower=beta1, upper= beta1, name=name, mean=beta1, prior="None")
 ## Formatted Table of summary of the logistic regression 
 ## including estimate, se,z-value,p-value
-data.frame(coef(summary(res_original))) %>%
+coef2=cbind(variable=c('exang1','oldpeak','slope1','slope2','ca1','ca2','ca3','ca4','thal1','thal2','thal3',''),
+            rbind( signif(coef(summary(res_original))[13:23,],5),c('','','','')))
+data.frame(cbind(signif(coef(summary(res_original))[1:12,],5),coef2)) %>%
   kable("latex", booktabs = T,
-        caption = 'Summary of Logistic Regression',
-        col.names = c('Estimate','Std.Error','z.value','p.value')) %>%
-  kable_styling(latex_options = "striped") 
+        caption = 'Summary of Logistic Regression', digits= 5,
+        col.names = c('Estimate','Std.Error','z.value','p.value',
+                      'Variable','Estimate','Std.Error','z.value','p.value')) %>%
+  kable_styling(latex_options = c("striped", "hold_position",'scale_down'))
 ```
 
 
@@ -133,6 +295,11 @@ params2 = extract(chain2)
 beta2 = params2[["beta"]]
 ```
 
+```{r}
+params2=readRDS('stan2.rds')
+beta2 = params2[["beta"]]
+```
+
 ```{r eval=FALSE}
 ## 95% credible interval based on quantiles of posterior sample
 ## also get point estimate by mean of posterior sample
@@ -159,8 +326,8 @@ for(i in 1:(dim(beta2)[2])){
 ```
 
 
-```{r}
-knitr::include_graphics(c("beta1.png"))
+```{r,fig.align='center',fig.cap='Estimate of parameters beta.',fig.pos='H'}
+knitr::include_graphics(c("beta.png"))
 ```
 
 Most red lines of parameters from standard logistic regression fall into the credible intervals of posterior distribution, meaning most variables produce similar effects in both models. In contrast, absolute value of parameters of variables `intercept`, `thal1`, `thal2` and `thal3` in bayesian logistic regression are much smaller compared to standard model. That may because bayesian logsitic regression could take full use of information from data and adjust the effects of these variables properly.
@@ -180,7 +347,7 @@ The reason for NEG prior to have a shrinkage influence to $\beta,\beta_0$ is tha
 
 Here, another large problem for this model is how to choose hyper parameters $a_0,b_0$. We then decide to use a method similar to model checking. First, we propose a pair of possible $a_0,b_0$. Second, based on our model, we simulate a $\lambda$ and a matrix of ‘Fake Data’, which is generated from normal distribution $N(0,1)$. Then we could get a vector of generated responses following the process of our model. In the next step, repeat the former steps for 1000 times and obtain a distribution of a summarized statistic (e.g., mean) of every group of generated response. Finally, comparing the distribution of `mean` summary statistic to the one of true data, we choose reasonable values of $a_0,b_0$.
 
-```{r,out.height='50%',out.width='50%',fig.align='center'}
+```{r,out.height='50%',out.width='50%',fig.align='center',fig.cap='Histogram of the posterior distribution of lambda',fig.pos='H'}
 ## a,b: a proposal of hyperparamters
 ## k: number of predictors, n : number of observations
 hyperprior_para_seletion=function(a,b,n,k){
@@ -211,6 +378,7 @@ hyperprior_para_seletion=function(a,b,n,k){
   return(mean_data[!is.na(mean_data)])
 }
 ## Compare to the mean of true data and plot
+#layout(mat=matrix(c(1,2,3,4)))
 par(mfrow=c(2,2))
 hist(hyperprior_para_seletion(a=0.5,b=0.5,n=273,k=22),xlab='mean of generated y',main='alpha=0.5,beta=0.5')
 abline(v=mean(ytrain),col='red')
@@ -220,6 +388,7 @@ hist(hyperprior_para_seletion(a=100,b=1,n=273,k=22),xlab='mean of generated y',m
 abline(v=mean(ytrain),col='red')
 hist(hyperprior_para_seletion(a=1,b=100,n=273,k=22),xlab='mean of generated y',main='alpha=1,beta=100')
 abline(v=mean(ytrain),col='red')
+
 ```
 
 In this example, we try several pairs of $(a_0, b_0)$ and results are plotted above. Though both $a_0=0.5,b_0=0.5$ and $a_0=5,b_0=5$ are appropriate, we finally choose $a_0=5,b_0=5$ as its best performance.
@@ -238,24 +407,35 @@ chain3 = stan(file="STATS551_project2.stan", data = dat, iter=2000)
 params3 = extract(chain3)
 beta3 = params3[["beta"]]
 lambda3=params3[['lambda']]
+```
+
+```{r}
+params3=readRDS('stan3.rds')
+beta3 = params3[["beta"]]
+lambda3=params3[['lambda']]
+```
+
+```{r}
 ## 95% credible interval based on quantiles of posterior sample
 ## also get point estimate by mean of posterior sample for NEG prior
 ci3 = data.frame(t(apply(beta3, 2, function(x) quantile(x, probs=c(0.025, 0.975)))), name=name, mean=colMeans(beta3), prior="N-E-G")
 colnames(ci3) = c("lower","upper","name","mean","prior")
 ```
 
-```{r eval=FALSE}
+```{r,eval=FALSE}
 ## Plot of prior and posterior of lambda
 ## png('lambda.png')
-plot(density(lambda3),main="Plot of the posterior distribution of lambda",xlab="lambda")
+hist(lambda3,freq=FALSE,ylim=c(0,1.4))
+lines(density(lambda3),xlab="lambda")
 lines(seq(0,2.7,0.1), dgamma(seq(0,2.7,0.1), 5, 5), col="red")
 legend(2, 1.2, c("prior",'posterior'), col=c("red",'black'), lty=c(1,1))
 ## dev.off()
 ```
 
-```{r,out.height='70%',out.width='70%'}
+```{r,out.height='60%',out.width='60%',fig.align='center',fig.cap='Histogram of the posterior distribution of lambda',fig.pos='H'}
 knitr::include_graphics(c("lambda.png"))
 ```
+
 
 ## 4 Inference 
 ### 4.1 Confidence Interval
@@ -279,9 +459,10 @@ ci %>% # if include intercept
 Below is the plot of point estimate and estimated confidence intervals of parameters $\beta,\beta_0$ from all three different models above. From the plot, we could observe that NEG prior does have strong shrinkage effects to our model that 0 is included in most of blue confidence intervals. We also notice that variables kept are exactly the siginificant variables in standard logistic regression. In addition, confidence intervals with NEG prior are narrowed down compared to orange confidence intervals, for example, for variables `slope1` and `intercept`, meaning more concentrated and precise estimates of parameters. In conclusion, bayesian logistic regression with NEG prior is a very efficient method combining model fitting with variable selection at the same time.
 
 
-```{r}
+```{r,fig.align='center',fig.cap='Confidence interval and point estimate of beta',fig.pos='H'}
 knitr::include_graphics(c("ci.png"))
 ```
+
 
 ### 4.2 Prediction
 
@@ -311,7 +492,7 @@ For each group of predicted data, we could compare them with original test data.
 
 In the next step, we are going to use two indeces `log-loss` and `sensitivity` to evaluate the prediction performances of three models.
 
-```{r eval=FALSE}
+```{r}
 ## Prediction of Bayesian Logistic Regression with N-IG prior:
 set.seed(551)
 ### sample 2000 times from the posterior sample of beta
@@ -329,9 +510,10 @@ logloss2_dist=sapply(1:5000,function(i){sum(-log(prob2[ytest==1,i]))+sum(-log(1-
 logloss2=mean(logloss2_dist)
 ### predictive sensitivity
 sensitivity2_dist = apply(predtest2, 2, function(x) sum(x*ytest))/sum(ytest)
+sensitivity2=mean(sensitivity2_dist)
 ```
 
-```{r eval=FALSE}
+```{r}
 set.seed(551)
 ## Prediction of Bayesian Logistic Regression with NEG prior
 ### Sampling from posterior sample of beta
@@ -348,30 +530,31 @@ logloss3_dist=sapply(1:5000,function(i){sum(-log(prob3[ytest==1,i]))+sum(-log(1-
 logloss3=mean(logloss3_dist)
 ### predictive sensitivity
 sensitivity3_dist = apply(predtest3, 2, function(x) sum(x*ytest))/sum(ytest)
+sensitivity3=mean(sensitivity3_dist)
 ```
 
 
 #### 4.2.1 Log-Loss
 
+Log-loss or logarithmic loss is an metric used in classification problems to compare the prediction performanes of different models. The lower log-loss is, the better performance of the model has. Log-loss also has an requirement that we need the raw probabilities of $P(y=1|\beta,\beta_0)$ as well as the true response. For logistic regression, log-loss is defined as:
 
+\[-log(y|p)=-ylog(p)-(1-y)log(1-p)\]
+\[\textup{ where } y \textup{ is the target value 0 or 1, } p \textup{ is the probability } P(y=1|\beta,\beta_0).\]
 
 Using this formula, we calculate the log-loss value of standard logistic regression and density distribution of log-loss of bayesian logistic regression models and show them into one plot. Average log-loss for bayesian methods are also computed and marked on the plot below. 
 
-```{r eval=FALSE}
-# Compare Predictive logloss and plot
-## png('logloss.png')
-plot(density(logloss3_dist), main="Density of Predictive Logloss", xlab="Logloss", col="blue")
-lines(density(logloss2_dist), col="red")
-abline(v=logloss1, col="black",lty=2)
-abline(v=logloss2, col="red",lty=2)
-abline(v=logloss3, col="blue",lty=2)
-legend(4.5, 0.18, c("Logistic","N-IG","NEG"), col=c("black","red","blue"), lty=c(1,1,1))
-## dev.off()
+```{r,out.height='70%',out.width='70%',fig.align='center',fig.cap='Histogram of predictive log-loss',fig.pos='H'}
+logloss23=melt(data.frame('N-IG'=logloss2_dist,'NEG'=logloss3_dist))
+names(logloss23)=c('prior','value')
+ggplot(logloss23,aes(x=value, fill=prior))+
+  geom_vline(xintercept =logloss1, color = "#999999", size=1.2,text='Logistic')+
+  geom_histogram(alpha=0.5,aes(y = ..density..))+
+  xlim(0,30)+
+  geom_vline(xintercept =logloss2, color = "#F8766D", size=1.2)+
+  geom_vline(xintercept =logloss3, color = "#00BFC4", size=1.2)+
+  xlab('log-loss')
 ```
-
-```{r}
-knitr::include_graphics(c("logloss.png"))
-```
+`
 
 It is showed that log-loss of bayesian models have a large improvement compared to logistic regression, while model with NEG prior is samller than model with N-IG prior in log-loss. In summary, bayesian logistic regression model with shrinkage prior performs best in prediction.
 
@@ -382,26 +565,30 @@ Sensitivity is another index of great importance to heart disease detection. If 
 We also use a plot to illustrate the superiority of bayesian logistic regression model with NEG prior. See it below.
 Logistic regression produces a sensitivity of 73.33% and bayesian model with N-IG prior shows 72.22% sensitivity, while bayesian model with NEG prior has an average sensitivity of 74.52%, higher than both of others.
 
-```{r eval=FALSE}
-# Compare Sensitivity and plot
-## png('sensitivity.png')
-plot(density(sensitivity2_dist), main="Sensitivity", xlab="sensitivity", col="red")
-lines(density(sensitivity3_dist), col="blue")
-abline(v=sensitivity1, col="black")
-abline(v=mean(sensitivity2_dist), col="red")
-abline(v=mean(sensitivity3_dist), col="blue")
-legend(0.35, 5, c("Logistic","N-IG","N-E-G"), col=c("black","red","blue"), lty=c(1,1,1))
-## dev.off()
+```{r,out.height='70%',out.width='70%',fig.align='center',fig.cap='Histogram of predictive sensitivity',fig.pos='H'}
+sensitivity23=melt(data.frame('N-IG'=sensitivity2_dist,'NEG'=sensitivity3_dist))
+names(sensitivity23)=c('prior','value')
+ggplot(sensitivity23,aes(x=value, fill=prior))+
+  geom_vline(xintercept =sensitivity1, color = "#999999", size=1.2,text='Logistic')+
+  geom_histogram(alpha=0.5,aes(y = ..density..))+
+  geom_vline(xintercept =sensitivity2, color = "#F8766D", size=1.2)+
+  geom_vline(xintercept =sensitivity3, color = "#00BFC4", size=1.2)+
+  xlab('log-loss')
 ```
 
-```{r}
-knitr::include_graphics(c("sensitivity.png"))
-```
+
 ## 5. Conclusion & Future Work
 
+In conlusion, for large dataset, logistic regression and bayesian inference may produce very similar results. But in general, bayesian modeling is more flexible and is better when we do not have many observations. In this case, we may also use sparse solution assumption for parmeters to shrink non-significant variables to 0 in our model. In this way, we could deal with high correlation between variables and reduce variable dimensionalty. Only factors which produce important effects to response could be kept. Then it is easier for us to intepreat models. 
+
+For this dataset, bayesian logistic regression with NEG prior has the best prediction performances on both log-loss and sensitivity compared to standard logistic regression and bayesian logistic regression with N-IG prior. 
+
+For future work, we may try more bayesian models with various priors and test their performances in prediction.
 
 
 ## 6. Reference
+http://archive.ics.uci.edu/ml/datasets/heart+disease
+
 Wei, R. & Ghosal, S. (2017). Contraction properties of shrinkage priors in logistic regression, Preprint at http://www4.stat.ncsu.edu/~ghoshal/papers.
 
 Genkin, A., Lewis, D. & Madigan, D. (2007). Large-scale Bayesian logistic regression for text categorization. Technometrics, 49(3): 291–304.
@@ -416,5 +603,6 @@ Detrano, R., Janosi, A., Steinbrunn, W., Pfisterer, M., Schmid, J. J., Sandhu, S
 
 http://wiki.fast.ai/index.php/Log_Loss
 
-## Appendix
+\pagebreak
 
+## Appendix

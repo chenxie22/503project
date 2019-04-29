@@ -14,16 +14,19 @@ knitr::opts_chunk$set(echo = FALSE,message=FALSE,warning=FALSE)
 ```
 ## 1. Introduction
 
-Logistic regression is a very famous and widely applied technique in supervised learning. It is usually used to perform predictive analysis when the response variable is binary. 
+Logistic regression is a very famous and widely applied technique in classification. It is usually used to perform predictive analysis when the response variable is binary. 
 
-Logistic regression can also be approached by bayesian modeling. In general, bayesian analysis is more flexible, and it is proved to be superior for small samples. We can incorporate prior information in bayesian modeling. For example, if we only want the most effective factors in the model, we can use some shrinkage priors to implement variable selection. 
+Logistic regression can also be approached by bayesian modeling. In general, bayesian analysis is more flexible, and it is proved to be superior for small samples. Above all, We can incorporate prior information in bayesian modeling. For example, if we want to reduce the dimension of predictors and avoid overfitting, some shrinkage priors can be chosen to implement regularization. 
 
-In practice, predicting a binary response can be an application of the standard logistic regression as well as bayesian approach. In this report, we delve into a data set about heart health condition of 303 patients collected between May 1981 and September 1984 at the Cleveland Clinic in Cleveland, Ohio. The objective is to predict if the patients have heart disease based on 13 independent variables, such as age, sex, chest pain type, etc. In this process, we will explore the different effects of specific predictors to response variable in different models. In addition, we will also compare different logistic regression models.
+In practice, predicting a binary response can be an application of the standard logistic regression as well as the bayesian approach. In this report, we delve into a data set which is about heart health condition of 303 patients. This data set was collected between May 1981 and September 1984 at the Cleveland Clinic in Cleveland, Ohio. The objective is to predict whether the patients have heart disease based on 13 independent variables, such as `age`, `sex`, `chest pain type`, etc. In this process, we will explore the different effects of specific predictors on response variable in different models, and will also compare prediction performance among models.
 
 ## 2. Data Exploration
 
-The dataset `heart.csv` is from UCI Machine Learning Repository. It has 303 observations and 14 variables in total. Every row is associated with a patient. The response variable is `target`, i.e. whether the angiographic result is present or absent of a diameter narrowing larger than 50% (presence=1, absence=0). There are 5 continuous independent variables and 8 categorical ones. See more information about the response and predictors in the data description table below.
- 
+### 2.1 Dataset
+
+The dataset is about heart disease of patients at the Cleveland Clinic in Cleveland, Ohio. It is from UCI Machine Learning Repository, and has 303 observations and 14 variables in total. Every row is associated with a patient. The response variable `target` is whether the angiographic result is present or absent of a diameter narrowing larger than 50% (presence=1, absence=0). In other words, the patient is diagnosed as having heart disease if `target` is 1, and not if `target` is 0. To predict the heart disease, the dataset collected 3 types of independent variables. Clinical variables such as `age`, `sex`, `cp`, `trestbps`, were related to clinical effects. Predictors `chol`, `fbs`, and `restecg` were from routine tests, while variables `thelach`, `exang`, `oldpeak`, `slope`, `ca` , and `thal` were collected from noninvasive test. More detailed descriptions of the response, 5 continuous and 8 categorical independent variables can be found in Table 1.
+
+The data collection process can be assumed as independent and without work-up bias. For each type of variables (response, clinical, routine test, noninvasive test), the data were recorded and analyzed without any knowledge of other types of variables.
 
 ```{r}
 ## Libraries:
@@ -66,11 +69,9 @@ tbl0 %>%
   column_spec(4,width='32em')
 ```
 
-Because the data is tested in a noninvasive way and is not incorporated with knowledge of other test data and historical results, there is no work-up bias, i.e., verification bias, during the data collection process.
+### 2.2 Exploratory Analysis
 
-Firstly, check the numerical summaries of the continuous and categorical variables in two separate tables below. We see that our dataset is very clean and there is no missing value to deal with. 
-
-Table 2 shows that the continuous variables all have some extreme values, especially `chol` and `oldpeak`. The average age of the recorded patients is 54. Table 3 indicates that we have around 1/3 data from females and the rest 2/3 from males.
+In this section, we perform data exploration to understand possible relationships among the variables. Firstly, we check the numerical summaries of the continuous and categorical variables in Table 2 and Table 3, respectively. The dataset is very clean and has no missing value. Table 2 also shows that the continuous variables all have some extreme values, especially `chol` and `oldpeak`. The average age of the recorded patients is 54. Table 3 indicates that we have around 1/3 data from females and the rest 2/3 from males.
 
 ```{r}
 ## Generate Summary table for continuous variables:
@@ -94,9 +95,11 @@ tbl1 %>%
   kable_styling(latex_options = c("striped", "hold_position")) 
 ```
 
-Next, take a look at the heart disease dataset through visualization. Figure 1 shows the pairwise scatterplots and histograms of continuous variables. These variables `age`, `trestbps`, `chol`, `thelach`, `oldpeak` display weak correlations between each other.
+\pagebreak
 
-```{r,out.height='70%',out.width='70%',fig.align='center',fig.cap='Pairwise scatterplots and histogram of continuous variables.',fig.pos='H'}
+Next, we take a look at the heart disease dataset through visualization. Figure 1 shows the pairwise scatterplots and histograms of continuous variables. These variables `age`, `trestbps`, `chol`, `thelach`, `oldpeak` display weak correlations between each other. In Figure 2, we try to explore the relationship between the `target` and the continuous variables by boxplots. It is noticed that the patients who are detected to have heart disease have an overall higher maximum heart rate achieved (`thalach`). It implies that `thalach` is a possibly significant preditor on `target`. 
+
+```{r,out.height='45%',out.width='45%',fig.cap='Pairwise scatterplots and histogram of continuous variables.',fig.pos='H',fig.align='center'}
 ## Pair plot including scatterplot, correation, histograms of continuous variables:
 #png("pairs.png")
 h_pairs=ggpairs(h[c(1,4,5,8,10)],axisLabels = "none",
@@ -108,9 +111,8 @@ h_pairs
 #dev.off()
 ```
 
-Explore the relationship between target and the continuous variables by boxplots in Figure 2. It is noticed that the patients who are detected to have heart disease have an overall higher (`thalach`) maximum heart rate achieved. 
 
-```{r,out.height='55%',out.width='70%',fig.align='center',fig.cap='Boxplots of continuous variables.',fig.pos='H'}
+```{r,out.height='45%',out.width='45%',fig.cap='Boxplots of continuous variables.',fig.pos='H',fig.align='center'}
 ## Generate boxplots of continuous variables by target(response):
 p1=ggplot(h, aes(x=target,y=age,group=target)) +
   geom_boxplot(outlier.colour="black", outlier.shape=10,outlier.size=2, notch=FALSE,color=c("#E69F00", "#56B4E9"))
@@ -127,9 +129,9 @@ grid.arrange(p1, p2, p3,p4,p5, nrow = 1)
 #dev.off()
 ```
 
-Take a quick look at the bar charts of categorical variables against response variable in Figure 3. As we could see, the response `target` is relatively balanced.
+Finally, let us take a quick look at the bar charts of categorical variables against response variable in Figure 3. As we could see, the response `target` is relatively balanced. In addition, we can also find that some categorical independent variables may be important to predict `target`. For instance, the distributions of `target` are quite different when `sex` is female (`sex` = 0) or male (`sex` = 1) . However, for other predictors such as `restecg`, it seems to be not very influential on `target`.
 
-```{r,out.height='70%',out.width='80%',fig.align='center',fig.cap='Bar charts of categorical variables.',fig.pos='H'}
+```{r,out.height='50%',out.width='50%',fig.align='center',fig.cap='Bar charts of categorical variables.',fig.pos='H'}
 ## Barcharst of categorical variables by the response varaibles(target):
 bp1<-ggplot(data=as.data.frame(table(h$target,h$sex)), aes(x=Var2, y=Freq, fill=Var1)) +
   geom_bar(stat="identity", position=position_dodge())+
@@ -208,13 +210,6 @@ grid.arrange(bp9,bp1,bp2,bp3,bp4,bp5,bp6,bp7,bp8, nrow = 3)
 #dev.off()
 ```
 
-### Data Preparation
-
-Before we perform logistic regressions to dataset, we need to prepare our data first. 
-
-First, we turn categorical variables into dummy variables by using function `model.matrix`. The first column of the result matrix is intercept 1. As a result, the number of independent variables grow from 13 to 23.
-
-In order to test the prediction performance of the models, we then randomly split the whole dataset into training (80%) and test (20%) parts. Our training dataset has 273 observations and test dataset has 30 observations.
 ```{r}
 ## Generate dummy variables for categorical data:
 H = model.matrix(target~., data=h)
@@ -226,6 +221,7 @@ Xtest = H[-ind,]
 ytrain = h[ind,14]
 ytest = h[-ind,14]
 ```
+
 
 ## 3. Logistic Regression
 

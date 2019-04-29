@@ -595,11 +595,11 @@ For future work, we may try more bayesian models with various priors and test th
 
 
 ## 6. Reference
-http://archive.ics.uci.edu/ml/datasets/heart+disease
+Detrano, R., Janosi, A., Steinbrunn, W., Pfisterer, M., Schmid, J., Sandhu, S., Guppy, K., Lee, S., & Froelicher, V. (1989). International application of a new probability algorithm for the diagnosis of coronary artery disease. American Journal of Cardiology, 64:304-310. http://archive.ics.uci.edu/ml/datasets/heart+disease
 
 Wei, R. & Ghosal, S. (2017). Contraction properties of shrinkage priors in logistic regression, Preprint at http://www4.stat.ncsu.edu/~ghoshal/papers.
 
-Genkin, A., Lewis, D. & Madigan, D. (2007). Large-scale Bayesian logistic regression for text categorization. Technometrics, 49(3): 291?C304.
+Genkin, A., Lewis, D. & Madigan, D. (2007). Large-scale Bayesian logistic regression for text categorization. Technometrics, 49(3): 291-304.
 
 Kapat, P. & Wang, K. (2006). Classification Using Bayesian Logistic Regression: Diabetes in Pima Indian Women Example. Ohio State University, OH. https://www.asc.ohio-state.edu/goel.1/STAT825/PROJECTS/KapatWang_Team4Report.pdf
 
@@ -609,7 +609,8 @@ Park, T. & Casella, G. (2008). The Bayesian LASSO, Journal of the American Stati
 
 Detrano, R., Janosi, A., Steinbrunn, W., Pfisterer, M., Schmid, J. J., Sandhu, S., Guppy, K., Lee, S. & Froelicher, V. (1989). International application of a new probability algorithm for the diagnosis of coronary artery disease. The American journal of cardiology, 64(5): 304-310. 
 
-http://wiki.fast.ai/index.php/Log_Loss
+MediaWiki (2017). Log-Loss. http://wiki.fast.ai/index.php/Log_Loss
+
 
 
 

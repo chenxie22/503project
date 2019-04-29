@@ -1,7 +1,7 @@
 ---
-title: "551 Project, Team 10"
+title: "Bayesian Logistic Regression on Heart Disease: Inference, Prediction, and Comparison."
 author: "Chen Xie, Xinye Jiang, Xun Wang"
-date: "2019/4/13"
+date: "2019/4/29"
 output:
   pdf_document: 
     fig_caption: yes

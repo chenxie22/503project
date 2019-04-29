@@ -1,0 +1,359 @@
+```{r eval=FALSE, echo=TRUE}
+## Libraries:
+library(coda); 
+library(ggplot2);library(gbm);library(GGally)
+library(dplyr);library(tidyr)
+library(knitr);library(kableExtra)
+library(reshape2)
+## Read Data:
+h = read.csv("heart.csv")
+h$sex=as.factor(h$sex)
+h$cp=as.factor(h$cp)
+h$fbs = as.factor(h$fbs)
+h$restecg = as.factor(h$restecg)
+h$exang = as.factor(h$exang)
+h$slope = as.factor(h$slope)
+h$ca = as.factor(h$ca)
+h$thal = as.factor(h$thal)
+## The response variable
+#h$target = as.factor(h$target)
+names(h)=c('age',names(h)[-1])
+tbl0=tibble('Variables'=c('target','age','sex','cp','trestbps','chol','fbs',
+                          'restecg','thelach','exang','oldpeak','slope','ca','thal'),
+            'Type'=c('Binary','Continuous','Binary','Categorical','Continuous','Continuous','Binary',
+                     'Binary','Continuous','Binary','Continuous','Ordinal','Ordinal','Categorical'),
+            'Collection'=c('Dependent Variable','Clinical Variable','Clinical Variable',
+                           'Clinical Variable','Clinical Variable','Routine test',
+                           'Routine test','Routine test','Noninvasive test','Noninvasive test',
+                           'Noninvasive test','Noninvasive test','Noninvasive test',
+                           'Noninvasive test'),
+            'Description'=c('angiographic result of the presence or absence of a >50% diameter narrowing; presence = 1; absence = 0.','age in years','1=male; 0=female','chest pain type; 0=typical angina; 1=atypical angina; 2=non-anginal; 3=asymptomatic','systolic/resting blood pressure (in mm Hg on admission to the hospital)','serum cholestoral in mg/dl','(fasting blood sugar > 120 mg/dl) (1 = true; 0 = false)',"resting electrocardiographic results; 0=normal; 1=having ST-T wave abnormality; 2=showing probable or definite left ventricular hypertrophy by Estes' criteria",'maximum heart rate achieved','exercise induced angina (1 = yes; 0 = no)','ST depression induced by exercise relative to rest','the slope of the peak exercise ST segment; 0=upsloping; 1=flat; 2=downsloping','number of major vessels (0-3) colored by flourosopy','exercise thallium scintigraphic defects; 3=normal; 6=fixed defect; 7=reversable defect'))
+tbl0 %>%
+  kable("latex", booktabs = T,
+        caption = 'Data Description') %>%
+  kable_styling(latex_options = c("striped", "hold_position","scale_down"))%>%
+  column_spec(4,width='32em')
+## Generate Summary table for continuous variables:
+do.call(cbind, lapply(h[,c(1,4,5,8,10)],summary)) %>%
+  kable("latex", booktabs = T,
+        caption='Summary of Continuous Variables') %>%
+  kable_styling(latex_options = c("striped", "hold_position"))
+## Genrate Summary table for categorical variables:
+tbl1<-tibble('target'=c('0: 138','1: 165','','',''),
+             'sex'=c('female: 96','male: 207','','',''), 
+             'cp'=c('0: 143', '1: 50','2: 87','3: 23',''), 
+             'fbs'=c('0: 258', '1: 45 ','','',''),
+             'restecg'=c('0: 147', '1: 152','2: 4','',''),
+             'exang'=c('0: 204', '1: 99','','',''),
+             'slope'=c('0: 21','1: 140', '2: 142','',''),
+             'ca'=c('0: 175','1: 65','2: 38','3: 20','4: 5'),
+             'thal'=c('0: 2','1: 18','2: 166','3: 117',''))
+tbl1 %>%
+  kable("latex", booktabs = T,
+        caption = 'Summary of Categorical Variables') %>%
+  kable_styling(latex_options = c("striped", "hold_position")) 
+## Pair plot including scatterplot, correation, histograms of continuous variables:
+#png("pairs.png")
+h_pairs=ggpairs(h[c(1,4,5,8,10)],axisLabels = "none",
+        upper = list(continuous = "points", combo = "dot"),
+        lower = list(continuous = "cor", combo = "dot"),
+        diag = list(continuous = "barDiag")) + 
+  theme_bw()
+h_pairs
+#dev.off()
+## Generate boxplots of continuous variables by target(response):
+p1=ggplot(h, aes(x=target,y=age,group=target)) +
+  geom_boxplot(outlier.colour="black", outlier.shape=10,outlier.size=2, notch=FALSE,color=c("#E69F00", "#56B4E9"))
+p2=ggplot(h, aes(y=trestbps,x=target,group=target)) +
+  geom_boxplot(outlier.colour="black", outlier.shape=10,outlier.size=2, notch=FALSE,color=c("#E69F00", "#56B4E9"))
+p3=ggplot(h, aes(y=chol,x=target,group=target)) +
+  geom_boxplot(outlier.colour="black", outlier.shape=10,outlier.size=2, notch=FALSE,color=c("#E69F00", "#56B4E9"))
+p4=ggplot(h, aes(y=thalach,x=target,group=target)) +
+  geom_boxplot(outlier.colour="black", outlier.shape=10,outlier.size=2, notch=FALSE,color=c("#E69F00", "#56B4E9"))
+p5=ggplot(h, aes(y=oldpeak,x=target,group=target)) +
+  geom_boxplot(outlier.colour="black", outlier.shape=10,outlier.size=2, notch=FALSE,color=c("#E69F00", "#56B4E9"))
+#png("boxplot.png")
+grid.arrange(p1, p2, p3,p4,p5, nrow = 1)
+#dev.off()
+## Barcharst of categorical variables by the response varaibles(target):
+bp1<-ggplot(data=as.data.frame(table(h$target,h$sex)), aes(x=Var2, y=Freq, fill=Var1)) +
+  geom_bar(stat="identity", position=position_dodge())+
+  geom_text(aes(label=Freq), vjust=1.6, color="black",
+            position = position_dodge(0.9), size=2.5)+
+  scale_fill_brewer(palette="Paired")+
+  labs(x='sex', y='Frequency',fill='target',title='Barchart of sex')+
+  theme_minimal()
+bp2<-ggplot(data=as.data.frame(table(h$target,h$cp)), aes(x=Var2, y=Freq, fill=Var1)) +
+  geom_bar(stat="identity", position=position_dodge())+
+  geom_text(aes(label=Freq), vjust=1.6, color="black",
+            position = position_dodge(0.9), size=2.5)+
+  scale_fill_brewer(palette="Paired")+
+  labs(x='cp', y='Frequency',fill='target',title='Barchart of cp')+
+  theme_minimal()
+bp3<-ggplot(data=as.data.frame(table(h$target,h$fbs)), aes(x=Var2, y=Freq, fill=Var1)) +
+  geom_bar(stat="identity", position=position_dodge())+
+  geom_text(aes(label=Freq), vjust=1.6, color="black",
+            position = position_dodge(0.9), size=2.5)+
+  scale_fill_brewer(palette="Paired")+
+  labs(x='fbs', y='Frequency',fill='target',title='Barchart of fbs')+
+  theme_minimal()
+bp4<-ggplot(data=as.data.frame(table(h$target,h$restecg)), aes(x=Var2, y=Freq, fill=Var1)) +
+  geom_bar(stat="identity", position=position_dodge())+
+  geom_text(aes(label=Freq), vjust=1.6, color="black",
+            position = position_dodge(0.9), size=2.5)+
+  scale_fill_brewer(palette="Paired")+
+  labs(x='restecg', y='Frequency',fill='target',title='Barchart of restecg')+
+  theme_minimal()
+bp5<-ggplot(data=as.data.frame(table(h$target,h$exang)), aes(x=Var2, y=Freq, fill=Var1)) +
+  geom_bar(stat="identity", position=position_dodge())+
+  geom_text(aes(label=Freq), vjust=1.6, color="black",
+            position = position_dodge(0.9), size=2.5)+
+  scale_fill_brewer(palette="Paired")+
+  labs(x='exang', y='Frequency',fill='target',title='Barchart of exang')+
+  theme_minimal()
+bp6<-ggplot(data=as.data.frame(table(h$target,h$slope)), aes(x=Var2, y=Freq, fill=Var1)) +
+  geom_bar(stat="identity", position=position_dodge())+
+  geom_text(aes(label=Freq), vjust=1.6, color="black",
+            position = position_dodge(0.9), size=2.5)+
+  scale_fill_brewer(palette="Paired")+
+  labs(x='slope', y='Frequency',fill='target',title='Barchart of slope')+
+  theme_minimal()
+bp7<-ggplot(data=as.data.frame(table(h$target,h$ca)), aes(x=Var2, y=Freq, fill=Var1)) +
+  geom_bar(stat="identity", position=position_dodge())+
+  geom_text(aes(label=Freq), vjust=1.6, color="black",
+            position = position_dodge(0.9), size=2.5)+
+  scale_fill_brewer(palette="Paired")+
+  labs(x='ca', y='Frequency',fill='target',title='Barchart of ca')+
+  theme_minimal()
+bp8<-ggplot(data=as.data.frame(table(h$target,h$thal)), aes(x=Var2, y=Freq, fill=Var1)) +
+  geom_bar(stat="identity", position=position_dodge())+
+  geom_text(aes(label=Freq), vjust=1.6, color="black",
+            position = position_dodge(0.9), size=2.5)+
+  scale_fill_brewer(palette="Paired")+
+  labs(x='thal', y='Frequency',fill='target',title='Barchart of thal')+
+  theme_minimal()
+bp9<-ggplot(data=as.data.frame(table(h$target)), aes(x=Var1, y=Freq,fill=Var1)) +
+  geom_bar(stat="identity", position=position_dodge())+
+  geom_text(aes(label=Freq), vjust=1.6, color="black",
+            position = position_dodge(0.9), size=2.5)+
+  scale_fill_brewer(palette="Paired")+
+  labs(x='target', y='Frequency',fill='target',title='Barchart of target')+
+  theme_minimal()
+#png("barchart.png")
+grid.arrange(bp9,bp1,bp2,bp3,bp4,bp5,bp6,bp7,bp8, nrow = 3)
+#dev.off()
+#png("response.png")
+#ggplot(data=as.data.frame(table(h$target)), aes(x=Var1, y=Freq,fill=Var1)) +
+  #geom_bar(stat="identity", position=position_dodge())+
+  #geom_text(aes(label=Freq), vjust=1.6, color="black",
+            #position = position_dodge(0.9), size=5)+
+  #scale_fill_brewer(palette="Paired")+
+  #labs(x='target', y='Frequency',fill='target',title='Barchart of target')+
+  #theme_minimal()
+#dev.off()
+## Generate dummy variables for categorical data:
+H = model.matrix(target~., data=h)
+## Randomly split training and testing test:
+set.seed(3)
+ind = sample(1:303, 273, replace=F)
+Xtrain = H[ind,]
+Xtest = H[-ind,]
+ytrain = h[ind,14]
+ytest = h[-ind,14]
+## Fit original logistic regression:
+res_original = glm(ytrain~., data=as.data.frame(Xtrain[,-1]), family=binomial(link="logit"))
+## Inference: 
+### p-values
+p1 = summary(res_original)$coefficients[,4]
+### estimates fo beta 
+beta1 = res_original$coefficients
+### estimates with 95% confidence interval for every beta
+name = names(beta1)
+ci1 = data.frame(lower=beta1, upper= beta1, name=name, mean=beta1, prior="None")
+## Formatted Table of summary of the logistic regression 
+## including estimate, se,z-value,p-value
+coef2=cbind(variable=c('exang1','oldpeak','slope1','slope2','ca1','ca2','ca3','ca4','thal1','thal2','thal3',''),
+            rbind( signif(coef(summary(res_original))[13:23,],5),c('','','','')))
+data.frame(cbind(signif(coef(summary(res_original))[1:12,],5),coef2)) %>%
+  kable("latex", booktabs = T,
+        caption = 'Summary of Logistic Regression', digits= 5,
+        col.names = c('Estimate','Std.Error','z.value','p.value',
+                      'Variable','Estimate','Std.Error','z.value','p.value')) %>%
+  kable_styling(latex_options = c("striped", "hold_position",'scale_down'))
+## Using rstan to draw MCMC posterior samples
+library(rstan)
+set.seed(551)
+dat = list(k=dim(Xtrain)[2], n=dim(Xtrain)[1], x=as.matrix(Xtrain), y=ytrain)
+chain2 = stan(file="STATS551_project1.stan", data = dat, iter=2000)
+## Extract beta (interested parameters)
+params2 = extract(chain2)
+beta2 = params2[["beta"]]
+params2=readRDS('stan2.rds')
+beta2 = params2[["beta"]]
+## 95% credible interval based on quantiles of posterior sample
+## also get point estimate by mean of posterior sample
+ci2 = data.frame(t(apply(beta2, 2, function(x) quantile(x, probs=c(0.025, 0.975)))), name=name, mean=colMeans(beta2), prior="N-IG")
+colnames(ci2) = c("lower","upper","name","mean","prior")
+## Histograms of posterior samples of beta
+## also plot credible interval 
+## also check if 0 in the interval
+## also compare point estimate of logistic regression to the posterior samples
+par(mfrow=c(4,6))
+for(i in 1:(dim(beta2)[2])){
+  # Histograms
+  hist(beta2[,i], 
+       main=sprintf("Posterior of beta %s", name[i]), 
+       xlab=sprintf("%s", name[i]), xlim=c(min(beta1[i],0,beta2[,i]), max(beta1[i],0,beta2[,i])))
+  # point estimate of logistic regression
+  abline(v=beta1[i], col="red")
+  # line beta=0
+  abline(v=0, col="blue")
+  # 95% credible interval 
+  abline(v=ci2[i,1], col="green", lty=2)
+  abline(v=ci2[i,2], col="green", lty=2)
+}
+knitr::include_graphics(c("beta.png"))
+## a,b: a proposal of hyperparamters
+## k: number of predictors, n : number of observations
+hyperprior_para_seletion=function(a,b,n,k){
+  # Initialize
+  mean_data=c()
+  set.seed(3)
+  # Fake indenpendent data
+  X=matrix(rnorm(n*k),nrow=n,ncol=k) 
+  # Iteration=1000
+  for (i in 1:1000){
+    # simulate lambda, variances, beta
+    lamb=rgamma(1,shape=a,rate=b)
+    sig2=rexp(k,rate=lamb)
+    betai=rnorm(k,mean=0,sd=sqrt(sig2))
+    # simulate intercept
+    alph=rnorm(1,mean=0,sd=2)
+    # compute probabilities
+    p=exp(alph+X%*%betai)/(1+exp(alph+X%*%betai))
+    # simulate Fake y's (response variable)
+    y=rbinom(n,size=1,prob=p)
+    # compute summary statistic (mean)
+    mean_data=c(mean_data,mean(y))
+    
+    # other options for summarized statistic: e.g., variance
+    ##var_data=c(var_data,var(y))
+  }
+  # return a distribution of summary statistic of fake data for a proposal of (a,b)
+  return(mean_data[!is.na(mean_data)])
+}
+## Compare to the mean of true data and plot
+#layout(mat=matrix(c(1,2,3,4)))
+par(mfrow=c(2,2))
+hist(hyperprior_para_seletion(a=0.5,b=0.5,n=273,k=22),xlab='mean of generated y',main='alpha=0.5,beta=0.5')
+abline(v=mean(ytrain),col='red')
+hist(hyperprior_para_seletion(a=5,b=5,n=273,k=22),xlab='mean of generated y',main='alpha=5,beta=5')
+abline(v=mean(ytrain),col='red')
+hist(hyperprior_para_seletion(a=100,b=1,n=273,k=22),xlab='mean of generated y',main='alpha=100,beta=1')
+abline(v=mean(ytrain),col='red')
+hist(hyperprior_para_seletion(a=1,b=100,n=273,k=22),xlab='mean of generated y',main='alpha=1,beta=100')
+abline(v=mean(ytrain),col='red')
+```{r eval=FALSE}
+set.seed(551)
+## Using rstan to implement MCMC sampling draw posterior sample 
+dat = list(k=dim(Xtrain)[2], n=dim(Xtrain)[1], x=as.matrix(Xtrain), y=ytrain)
+chain3 = stan(file="STATS551_project2.stan", data = dat, iter=2000)
+## Extract beta and lambda (interested parameters) 
+params3 = extract(chain3)
+beta3 = params3[["beta"]]
+lambda3=params3[['lambda']]
+params3=readRDS('stan3.rds')
+beta3 = params3[["beta"]]
+lambda3=params3[['lambda']]
+## 95% credible interval based on quantiles of posterior sample
+## also get point estimate by mean of posterior sample for NEG prior
+ci3 = data.frame(t(apply(beta3, 2, function(x) quantile(x, probs=c(0.025, 0.975)))), name=name, mean=colMeans(beta3), prior="N-E-G")
+colnames(ci3) = c("lower","upper","name","mean","prior")
+## Plot of prior and posterior of lambda
+## png('lambda.png')
+hist(lambda3,freq=FALSE,ylim=c(0,1.4))
+lines(density(lambda3),xlab="lambda")
+lines(seq(0,2.7,0.1), dgamma(seq(0,2.7,0.1), 5, 5), col="red")
+legend(2, 1.2, c("prior",'posterior'), col=c("red",'black'), lty=c(1,1))
+## dev.off()
+knitr::include_graphics(c("lambda.png"))
+# Compare interval estimation and plot
+ci = rbind(ci1,ci2,ci3)
+## png('ci.png')
+ci %>% # if include intercept
+  ggplot( aes(x=name, y=mean, color=prior) ) + 
+  geom_point( position = position_dodge(.5) )  +
+  geom_errorbar( aes(ymin=lower, ymax=upper), position = position_dodge(.5) ) +
+  scale_color_manual( values = c('red', 'orange', '#56B4E9')) +
+  coord_flip() +
+  theme_bw() + 
+  ylab("beta") +
+  xlab("")
+## dev.off()
+knitr::include_graphics(c("ci.png"))
+## Prediction of Logistic Regression: 
+predtest1 = predict(res_original, newdata=as.data.frame(Xtest[,-1]), type="response")
+### Predictive Accuracy
+###accuracy1 = mean(predtest1==ytest)
+### log loss
+logloss1=sum(-log(predtest1[ytest==1]))+sum(-log(1-predtest1[ytest==0]))
+### Predictive Sensitivity
+sensitivity1 = sum(predtest1*ytest)/sum(ytest)
+## Confusion matrix for prediction result
+data.frame(v1=c('Actual: No','Actual: Yes'),v2=c(11, 4),v3=c(4, 11)) %>%
+  kable("latex", booktabs = T,caption = 'Confusion matrix for logistic regression',align = 'r',
+        col.names = c('','Predicted: No','Predicted: Yes'))%>%
+  kable_styling(latex_options = c("striped", "hold_position"))
+## Prediction of Bayesian Logistic Regression with N-IG prior:
+set.seed(551)
+### sample 2000 times from the posterior sample of beta
+beta2_sample_ind = sample(1:4000, 5000, replace=T)
+### calculate predicted probability based on the predictive sample
+prob2 = 1/(1+exp(-as.matrix(Xtest) %*% t(beta2[beta2_sample_ind,])))
+### predict the response variable
+predtest2 = matrix(rbinom(5000*30, 1, prob=prob2), nrow=30)
+### predictive accuracy
+### accuracy2_dist = apply(predtest2, 2, function(x) mean(x==ytest))
+### point estimation of accuracy2_dist
+### accuracy2= mean(accuracy2_dist)
+### log loss
+logloss2_dist=sapply(1:5000,function(i){sum(-log(prob2[ytest==1,i]))+sum(-log(1-prob2[ytest==0,i]))})
+logloss2=mean(logloss2_dist)
+### predictive sensitivity
+sensitivity2_dist = apply(predtest2, 2, function(x) sum(x*ytest))/sum(ytest)
+sensitivity2=mean(sensitivity2_dist)
+set.seed(551)
+## Prediction of Bayesian Logistic Regression with NEG prior
+### Sampling from posterior sample of beta
+beta3_sample_ind = sample(1:4000, 5000, replace=T)
+prob3 = 1/(1+exp(-as.matrix(Xtest) %*% t(beta3[beta3_sample_ind,])))
+### Generate predicted response
+predtest3 = matrix(rbinom(5000*30, 1, prob=prob3), nrow=30)
+### predictive accuracy
+### accuracy3_dist = apply(predtest3, 2, function(x) mean(x==ytest))
+### point estimation of accuracy2_dist
+### accuracy3= mean(accuracy3_dist)
+### log loss
+logloss3_dist=sapply(1:5000,function(i){sum(-log(prob3[ytest==1,i]))+sum(-log(1-prob3[ytest==0,i]))})
+logloss3=mean(logloss3_dist)
+### predictive sensitivity
+sensitivity3_dist = apply(predtest3, 2, function(x) sum(x*ytest))/sum(ytest)
+sensitivity3=mean(sensitivity3_dist)
+logloss23=melt(data.frame('N-IG'=logloss2_dist,'NEG'=logloss3_dist))
+names(logloss23)=c('prior','value')
+ggplot(logloss23,aes(x=value, fill=prior))+
+  geom_vline(xintercept =logloss1, color = "#999999", size=1.2,text='Logistic')+
+  geom_histogram(alpha=0.5,aes(y = ..density..))+
+  xlim(0,30)+
+  geom_vline(xintercept =logloss2, color = "#F8766D", size=1.2)+
+  geom_vline(xintercept =logloss3, color = "#00BFC4", size=1.2)+
+  xlab('log-loss')
+sensitivity23=melt(data.frame('N-IG'=sensitivity2_dist,'NEG'=sensitivity3_dist))
+names(sensitivity23)=c('prior','value')
+ggplot(sensitivity23,aes(x=value, fill=prior))+
+  geom_vline(xintercept =sensitivity1, color = "#999999", size=1.2,text='Logistic')+
+  geom_histogram(alpha=0.5,aes(y = ..density..))+
+  geom_vline(xintercept =sensitivity2, color = "#F8766D", size=1.2)+
+  geom_vline(xintercept =sensitivity3, color = "#00BFC4", size=1.2)+
+  xlab('log-loss')
+```

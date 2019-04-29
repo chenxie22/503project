@@ -611,9 +611,6 @@ Detrano, R., Janosi, A., Steinbrunn, W., Pfisterer, M., Schmid, J. J., Sandhu, S
 
 http://wiki.fast.ai/index.php/Log_Loss
 
-\pagebreak
-
-## Appendix
 
 
 

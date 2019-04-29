@@ -465,7 +465,7 @@ Figure 7 shows point estimate and estimated confidence intervals of parameters $
 knitr::include_graphics(c("ci.png"))
 ```
 
-From this plot, we could observe that NEG prior does have strong shrinkage effects on the coefficients that 0 is included in most of blue confidence intervals. We also notice that the variables kept are exactly the same significant variables in standard logistic regression. 
+From this plot, we could observe that NEG prior does have strong shrinkage effects on the coefficients that 0 is included in most of blue confidence intervals. We also notice that the variables kept are exactly the same significant variables in standard logistic regression, i.e., `sex1`, `cp2`, `cp3`, `ca1`, `ca2` and `ca3`. Therefore, gender, symptom of chain pain and the number of major vessels which appeared to contain calcium are three most important factors to the `target` response. 
 
 In addition, confidence intervals with NEG prior are narrowed down compared to the ones with N-IG prior, for example, of the variables `slope1` and `intercept`, meaning that the estimates of parameters are more concentrated and precise. 
 
@@ -587,7 +587,7 @@ In conclusion, bayesian logistic regression model with shrinkage prior (NEG prio
 
 In conclusion, for large dataset, standard logistic regression and bayesian logistic regressions may produce very similar results. But in general, bayesian modeling is more flexible and has better performance when we do not have many observations. 
 
-We may also include sparse assumption of solutions to shrink the parameters of the non-significant variables to 0 in our model. In this way, we could reduce dimensionality and better the prediction performances, as only those factors which have important effects on the response variable would be kept. It is also easier for us to interpret the models in this case. 
+We may also include sparse assumption of solutions to shrink the parameters of the non-significant variables to 0 in our model. In this way, we could reduce dimensionality and better the prediction performances, as only those factors which have important effects on the response variable would be kept. It is also easier for us to interpret the models in this case. That gender, symptom of chain pain and the number of vessels containing calcium are three most important independent variables which could affect the response greatly. 
 
 For this dataset, bayesian logistic regression with NEG prior has the best prediction performance in both log-loss and sensitivity compared to standard logistic regression and bayesian logistic regression with N-IG prior. And the two bayesian logistic regression models both have a better prediction performance than the standard logistic regression, which shows the significance and powerfulness of the bayesian analysis.
 

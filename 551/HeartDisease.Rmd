@@ -453,7 +453,7 @@ ci %>% # if include intercept
 ## dev.off()
 ```
 
-Figure 7 shows point estimate and estimated confidence intervals of parameters $\beta,\beta_0$ from all three different models above. Here, we take the mean of posterior samples as the point estimate for bayesian models. 
+Figure 7 shows point estimates and estimated confidence intervals of parameters $\beta,\beta_0$ from all three different models above. Here, we take the mean of posterior samples as the point estimates for bayesian models. 
 
 
 ```{r,fig.align='center',fig.cap='Confidence interval and point estimate of beta',fig.pos='H',out.height='80%',out.width='80%'}
@@ -491,7 +491,7 @@ data.frame(v1=c('Actual: No','Actual: Yes'),v2=c(11, 4),v3=c(4, 11)) %>%
 
 To compare the models, we are going to use two indices `log-loss` and `sensitivity` instead of `accuracy` to evaluate the prediction performance of the three models.
 
-For prediction analysis, we should generate predictive samples from the posterior distributions of $\beta,\beta_0$, as the posterior distribution has beed updated by incorporating information from data and prior. To do this, we first randomly draw samples of $\beta$ from the posterior distribution many times. And then we generate new $y$ which has the same size of responses as the test dataset for each sample of $\beta$. In this way, we could obtain many groups of predictions for test data. Finally, we compare each group of predicted responses with the original test data.
+For prediction analysis, we should generate predictive samples from the posterior distributions of $\beta,\beta_0$, as the posterior distribution has been updated by incorporating information from data and prior. To do this, we first randomly draw samples of $\beta$ from the posterior distribution many times. And then we generate new $y$ which has the same size of responses as the test dataset for each sample of $\beta$. In this way, we could obtain many groups of predictions for test data. Finally, we compare each group of predicted responses with the original test data.
 
 
 ```{r}

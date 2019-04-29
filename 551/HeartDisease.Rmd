@@ -225,11 +225,11 @@ ytest = h[-ind,14]
 
 ## 3. Logistic Regressions
 
-In this part, we will briefly introduce three logistic regression models, including a standard one and two bayesian ones. There are several advantages to use logistic regression instead of other methods here. First, it can be interpreted. It helps to explain the relationship between the predictors and response variable. Next, the logistic regression can also handle mixed types of explanatory variables. Most importantly, we have a binary response in this problem. So logistic regression models are the most appropriate methods.
+In this part, we will briefly introduce three logistic regression models, including a standard one and two bayesian ones. There are several advantages to use logistic regression instead of other methods here. First, it can be interpreted. It helps to explain the relationship between the predictors and the response variable. Next, the logistic regression can also handle mixed types of explanatory variables. Most importantly, we have a binary response in this problem. So logistic regression models are the most appropriate methods here.
 
 ### 3.1 Data Preparation
 
-Before we perform logistic regressions to dataset, we need to prepare our data first. First, we turn categorical variables into dummy variables by using R function `model.matrix`, which also includes an intercept into our model. As a result, the number of independent variables grow from 13 to 23. In order to test the prediction performance of the models, we then randomly split the whole dataset into training (80%) and test (20%) sets. Our training dataset has 273 observations and test dataset has 30 observations.
+Before we perform logistic regressions to dataset, we need to prepare our data first. First, we turn categorical variables into dummy variables by using R function `model.matrix`. As a result, the number of independent variables grow from 13 to 23 (including intercept). In order to test the prediction performance of the models, we then randomly split the whole dataset into training (80%) and test (20%) sets. Our training dataset has 273 observations and test dataset has 30 observations.
 
 ### 3.2 Logistic Regression
 
@@ -239,7 +239,7 @@ The basic assumption of standard logistic regression model is that observations 
 \[\log(\frac{p_i}{1-p_i})=x_i^T\beta+\beta_0\]
 \[p(y_i;\beta,\beta_0)=(p_i)^{y_i}(1-p_i)^{1-y_i}, p(y_1,...,y_n;\beta,\beta_0)=\prod_{i=1}^n(p_i)^{y_i}(1-p_i)^{1-y_i}\]
 
-where $x_i$ is the i-th row of observations and $\beta,\beta_0$ are parameters.
+where $x_i$ is the i-th row observation and $\beta,\beta_0$ are parameters.
 
 Using `glm` function in R, we could easily obtain estimates of $\beta$ parameters. Table 4 provides us some summary statistics of the fitted results. From p.value column, we could observe that only 6 out of 23 predictors are significant in our model. If the significance level is $\alpha=0.1$, there are still only 9 significant predictors, which encourages us to seek sparse solutions.
 
@@ -269,16 +269,17 @@ data.frame(cbind(signif(coef(summary(res_original))[1:12,],5),coef2)) %>%
 
 ### 3.3 Bayesian Logistic Regression with N-IG Prior
 
-In the standard logistic regression above, we treat $\beta$ as a column of unknown but fixed parameters. Actually, $\beta,\beta_0$ could be seen as a vector of random variables from the prospective of bayesian analysis. In this way, we could combine data (model) and the prior we build up to obtain not only a point estimate, but also the posterior samples of parameters. In addition to basic assumptions of standard logistic regression, bayesian logistic regression method with N-IG prior assumes that $\beta,\beta_0$ subject to a normal prior with $\mu_i$, where the variances follow an Inverse-Gamma distribution with hyper parameters $a$ and $b$. The parameters $\mu_i$,$a$, and $b$ are assumed to be flat because we don't have much information about them. Although it probably results in improper prior, the powerful tool `Rstan` in R will help and still generate posterior samples of parameters. The statistical description is shown as below:
+In the standard logistic regression above, we treat $\beta$ as a column of unknown but fixed parameters. Actually, $\beta,\beta_0$ could be seen as a vector of random variables from the prospective of bayesian analysis. In this way, we could combine data (model) and the prior we build up to obtain not only a point estimate, but also the posterior samples of parameters. In addition to basic assumptions of standard logistic regression, bayesian logistic regression method with N-IG prior assumes that $\beta,\beta_0$ subject to a normal prior with mean $\mu_i$ and variance $\sigma^2$, where the variances follow an Inverse-Gamma distribution with hyper parameters $a$ and $b$. The parameters $\mu_i$, $a$, and $b$ are assumed to be flat because we don't have much information about them. Although it probably results in improper prior, the powerful tool `Rstan` in R will help and still generate posterior samples of parameters. The statistical description is shown as below:
 
 
-\[y_1,...,y_n, \textup{ are independent, and }y_i\sim \textup{ Binomial }(1, p_i)\]
+\[y_1,...,y_n, \textup{ are independent}\]
+\[\textup{Likelihood: } y_i\sim \textup{ Binomial }(1, p_i)\]
 \[\textup{Parameters: }\log(\frac{p_i}{1-p_i})=x_i^T\beta\]
 \[\textup{Prior: } \beta_i\sim N(\mu_i,\sigma_i^2)\]
 \[\textup{Hyper prior: } \sigma_i^2\sim \textup{Inv-Gamma}(a,b)\]
 \[\mu_i,a,b\textup{ are assumed to have flat distribution.}\]
 
-Using `Rstan`, we implement Monte Carlo Markov Chain algorithm (MCMC) to our model and obtain posterior samples of interested parameters $\beta,\beta_0$. We naturally compute their 95% credible intervals based on the sample quantiles. The Figure 4 shows the comparision of the corresponding parameters obtained by standard logistic regression and bayesian logistic. The red lines represent the $\beta$ estimates from standard logistic regression and green lines represent the 95% credible intervals produced by posterior samples of $\beta$, while blue lines indicate the location of 0.
+Using `Rstan`, we implement Monte Carlo Markov Chain algorithm (MCMC) to our model and obtain posterior samples of interested parameters $\beta,\beta_0$. We naturally compute their 95% credible intervals based on the sample quantiles. The Figure 4 shows the comparision of the corresponding parameters obtained by standard logistic regression and bayesian logistic. The red lines represent the estimates of $\beta$ from standard logistic regression and green lines represent the 95% credible intervals produced by posterior samples of $\beta$, while blue lines indicate the location of 0.
 
 ```{r eval=FALSE}
 ## Using rstan to draw MCMC posterior samples
@@ -329,7 +330,7 @@ for(i in 1:(dim(beta2)[2])){
 knitr::include_graphics(c("beta.png"))
 ```
 
-In fact, if the sample size is large enough, compared to the number of predictors, the estimations of bayesian analysis should be very similar to those of frequentist models. Even though the dataset here is not very large that we have 303 ovservations, we can also see that most red lines, which are estimates from standard logistic regression, fall into the 95% credible intervals of posterior samples, meaning that most variables produce similar effects in both models. In addition, comparing the blue vertical lines, which represent the '0', to the credible intervals, we can find that the significance of most parameters are not different from the results of the standard logistic regression model. In contrast, the absolute values of the coefficients of variables `intercept`, `thal1`, `thal2` and `thal3` in bayesian logistic regression are much smaller than the ones in the standard model. This may result from the fact that bayesian logistic regression could make full use of the information in data and adjust the effects of these variables properly.
+In fact, if the sample size is large enough compared to the number of predictors, the estimations of bayesian analysis should be very similar to those of frequentist models. Even though the dataset here is not very large that it only has 303 observations, we can also see that most red lines, which are estimates from standard logistic regression, fall into the 95% credible intervals of posterior samples, meaning that most predictors produce similar effects in both models. In addition, comparing the blue vertical lines, which represent the '0', to the credible intervals, we can find that the significance of most parameters are not different from the results of the standard logistic regression model. In contrast, the absolute values of the coefficients of variables `intercept`, `thal1`, `thal2` and `thal3` in bayesian logistic regression are much smaller than the ones in the standard model. This may result from the fact that bayesian logistic regression could incorporate the information from priors, make full use of data and adjust the effects of these nonsignificant variables properly.
 
 ### 3.4 Bayesian Logistic Regression with NEG prior
 

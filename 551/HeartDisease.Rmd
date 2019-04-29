@@ -223,23 +223,25 @@ ytest = h[-ind,14]
 ```
 
 
-## 3. Logistic Regression
+## 3. Logistic Regressions
 
 In this part, we will briefly introduce three logistic regression models, including a standard one and two bayesian ones. There are several advantages to use logistic regression instead of other methods here. First, it can be interpreted. It helps to explain the relationship between the predictors and response variable. Next, the logistic regression can also handle mixed types of explanatory variables. Most importantly, we have a binary response in this problem. So logistic regression models are the most appropriate methods.
 
-### 3.1 Logistic Regression
+### 3.1 Data Preparation
 
-The basic assumption of standard logistic regression model is that observations $y_1, ..., y_n$ are independent and follow binomial distribution (1, $p_i$), where $p_i$ is the probability of $y_i=1$. We could obtain point estimates of parameters $\beta$, which maximizes $\Pi_{i=1}^n P(Y_i=y_i)$ using log-maximum likelihood approach. The statistical description is below:
+Before we perform logistic regressions to dataset, we need to prepare our data first. First, we turn categorical variables into dummy variables by using R function `model.matrix`, which also includes an intercept into our model. As a result, the number of independent variables grow from 13 to 23. In order to test the prediction performance of the models, we then randomly split the whole dataset into training (80%) and test (20%) sets. Our training dataset has 273 observations and test dataset has 30 observations.
 
-\[y_1,...,y_n, \textup{ are independent}\]
-\[y_i\sim \textup{ Binomial }(1, p_i)\]
+### 3.2 Logistic Regression
+
+The basic assumption of standard logistic regression model is that observations $y_1, ..., y_n$ are independent and follow binomial distribution (1, $p_i$), where $p_i$ is the probability of $y_i=1$. We could obtain point estimates of parameters $\beta$, which maximizes $\Pi_{i=1}^n P(Y_i=y_i)$ using maximum likelihood approach. The statistical description is as below:
+
+\[y_1,...,y_n, \textup{ are independent, and } y_i\sim \textup{ Binomial }(1, p_i)\]
 \[\log(\frac{p_i}{1-p_i})=x_i^T\beta+\beta_0\]
-\[p(y_i;\beta,\beta_0)=(p_i)^{y_i}(1-p_i)^{1-y_i}\]
-\[p(y_1,...,y_n;\beta,\beta_0)=\prod_{i=1}^n(p_i)^{y_i}(1-p_i)^{1-y_i}\]
+\[p(y_i;\beta,\beta_0)=(p_i)^{y_i}(1-p_i)^{1-y_i}, p(y_1,...,y_n;\beta,\beta_0)=\prod_{i=1}^n(p_i)^{y_i}(1-p_i)^{1-y_i}\]
 
 where $x_i$ is the i-th row of observations and $\beta,\beta_0$ are parameters.
 
-Using `glm` function, we could easily obtain estimates of $\beta$ parameters. Table 4 provides us some summary statistics of the fitting result. From p.value column, we could observe that only 6 out of 23 predictors are significant in our model. If the significance level is $\alpha=0.1$, there are still only 9 significant predictors, which encourages us to seek sparse solutions.
+Using `glm` function in R, we could easily obtain estimates of $\beta$ parameters. Table 4 provides us some summary statistics of the fitted results. From p.value column, we could observe that only 6 out of 23 predictors are significant in our model. If the significance level is $\alpha=0.1$, there are still only 9 significant predictors, which encourages us to seek sparse solutions.
 
 ```{r, out.height="80%"}
 ## Fit original logistic regression:
@@ -265,19 +267,18 @@ data.frame(cbind(signif(coef(summary(res_original))[1:12,],5),coef2)) %>%
 ```
 
 
-### 3.2 Bayesian Logistic Regression with N-IG Prior
+### 3.3 Bayesian Logistic Regression with N-IG Prior
 
-In the standard logistic regression above, we treat $\beta$ as a column of unknown but fixed parameters. Actually, $\beta,\beta_0$ could be seen as a vector of random variables from the prospective of bayesian analysis. In this way, we could combine data (model) and the prior we build up to obtain not only a point estimate, but also the posterior distribution of parameters. In addition to basic assumptions of standard logistic regression, bayesian logistic regression method with N-IG prior assumes that $\beta,\beta_0$ subject to a normal prior with the variance following an Inverse-Gamma distribution. Other parameters are assumed to be flat because we don't have much information about them.
+In the standard logistic regression above, we treat $\beta$ as a column of unknown but fixed parameters. Actually, $\beta,\beta_0$ could be seen as a vector of random variables from the prospective of bayesian analysis. In this way, we could combine data (model) and the prior we build up to obtain not only a point estimate, but also the posterior samples of parameters. In addition to basic assumptions of standard logistic regression, bayesian logistic regression method with N-IG prior assumes that $\beta,\beta_0$ subject to a normal prior with $\mu_i$, where the variances follow an Inverse-Gamma distribution with hyper parameters $a$ and $b$. The parameters $\mu_i$,$a$, and $b$ are assumed to be flat because we don't have much information about them. Although it probably results in improper prior, the powerful tool `Rstan` in R will help and still generate posterior samples of parameters. The statistical description is shown as below:
 
 
-\[y_1,...,y_n, \textup{ are independent}\]
-\[\textup{Likelihood: } y_i\sim \textup{ Binomial }(1, p_i)\]
+\[y_1,...,y_n, \textup{ are independent, and }y_i\sim \textup{ Binomial }(1, p_i)\]
 \[\textup{Parameters: }\log(\frac{p_i}{1-p_i})=x_i^T\beta\]
 \[\textup{Prior: } \beta_i\sim N(\mu_i,\sigma_i^2)\]
 \[\textup{Hyper prior: } \sigma_i^2\sim \textup{Inv-Gamma}(a,b)\]
 \[\mu_i,a,b\textup{ are assumed to have flat distribution.}\]
 
-Using a powerful tool `Rstan` in R, we implement Monte Carlo Markov Chain algorithm to our model and obtain posterior samples of parameters $\beta$. We naturally compute their 95% credible intervals based on the sample quantiles. The plot below shows the comparision of the corresponding parameters obtained by standard logistic regression and bayesian logistic. The red lines represent the $\beta$ estimated from standard logistic regression and green lines represent the 95% credible intervals produced by posterior samples of $\beta$, while blue lines indicate the location of 0.
+Using `Rstan`, we implement Monte Carlo Markov Chain algorithm (MCMC) to our model and obtain posterior samples of interested parameters $\beta,\beta_0$. We naturally compute their 95% credible intervals based on the sample quantiles. The Figure 4 shows the comparision of the corresponding parameters obtained by standard logistic regression and bayesian logistic. The red lines represent the $\beta$ estimates from standard logistic regression and green lines represent the 95% credible intervals produced by posterior samples of $\beta$, while blue lines indicate the location of 0.
 
 ```{r eval=FALSE}
 ## Using rstan to draw MCMC posterior samples
@@ -328,24 +329,21 @@ for(i in 1:(dim(beta2)[2])){
 knitr::include_graphics(c("beta.png"))
 ```
 
-Most red lines from standard logistic regression fall into the 95% credible intervals of posterior samples, meaning that most variables produce similar effects in both models. In contrast, the absolute values of the coefficients of variables `intercept`, `thal1`, `thal2` and `thal3` in bayesian logistic regression are much smaller than the ones in standard model. This may result from the fact that bayesian logistic regression could make full use of the information in data and adjust the effects of these variables properly.
+In fact, if the sample size is large enough, compared to the number of predictors, the estimations of bayesian analysis should be very similar to those of frequentist models. Even though the dataset here is not very large that we have 303 ovservations, we can also see that most red lines, which are estimates from standard logistic regression, fall into the 95% credible intervals of posterior samples, meaning that most variables produce similar effects in both models. In addition, comparing the blue vertical lines, which represent the '0', to the credible intervals, we can find that the significance of most parameters are not different from the results of the standard logistic regression model. In contrast, the absolute values of the coefficients of variables `intercept`, `thal1`, `thal2` and `thal3` in bayesian logistic regression are much smaller than the ones in the standard model. This may result from the fact that bayesian logistic regression could make full use of the information in data and adjust the effects of these variables properly.
 
-### 3.3 Bayesian Logistic Regression with NEG prior
+### 3.4 Bayesian Logistic Regression with NEG prior
 
-Recall that in Table 4 most variables actually do not produce significant effects to the response. In order to figure out the most important predictors to the `target` response and to improve the interpretation of our results, we choose to use bayesian logistic models with shrinkage priors. There are many priors which are proved to have shrinkage effects to the parameters, for example, Cauchy prior, Laplace prior and horseshoe prior. We choose Normal-Exponential-Gamma prior considering the consistency with two previous models.
+Recall that in Table 4 most variables actually do not produce significant effects to the response. In order to figure out the most important predictors to the `target` response, we choose to use bayesian logistic models with shrinkage priors. There are many priors which are proved to have shrinkage effects to the parameters, for example, Cauchy prior, Laplace prior and horseshoe prior. Normal-Exponential prior, which has similar effect as LASSO regression, is a common option for logistic regression. The reason why NE prior has a shrinkage effect on $\beta,\beta_0$ is that the exponential distribution of variance lays a great mass of probabilities around 0. As a result, initial $\beta,\beta_0$ will gather around 0 with a large probability. The next problem is how we can control the shrinkage effect. In frequentist analysis, it usually uses cross-validation to choose shrinkage control parameters. But sometimes cross validation is computationally intensive. Instead, in bayesian modeling, we can build up a hyper prior usually Gamma distribution $(a_0,b_0)$ on $\lambda$. So finally, we perform bayesian logistic regression model with NEG prior, and the detailed statistical model is shown as below. 
 
-\[y_1,...,y_n, \textup{ are independent}\]
-\[\textup{Likelihood: } y_i\sim \textup{ Binomial }(1, p_i)\]
+\[y_1,...,y_n, \textup{ are independent, and }y_i\sim \textup{ Binomial }(1, p_i)\]
 \[\textup{Parameters: }\log(\frac{p_i}{1-p_i})=x_i^T\beta\]
 \[\textup{prior: } \beta_i\sim N(0,\sigma_i^2)\]
 \[\textup{Hyper Prior: } P(\sigma_i^2) \sim \textup{Exponential }(\lambda)\]
 \[\lambda\sim \textup{Gamma }(a_0,b_0),\textup{ where }a_0,b_0 \textup{ are two fixed parameters.}\]
 
-The reason why NEG prior has a shrinkage effect on $\beta,\beta_0$ is that the exponential distribution of variance lays a great mass of probabilities around 0. As a result, initial $\beta,\beta_0$ will gather around 0 with a large probability. 
+Another important problem for this model is how to choose hyperparameters $a_0,b_0$, as we do not want to too many nuisance parameters. We decide to use a method similar to model checking. First, we propose a pair of possible $a_0,b_0$. Second, we simulate a $\lambda$ and a matrix of "Fake Data" which is generated from normal distribution $N(0,1)$ based on our model. Then we could get a vector of generated responses following the model generating process and obtain a summary statistic (e.g., mean) of the responses. We repeat the previous steps for 1000 times and obtain the distribution of the summary statistic. Finally, comparing the distribution of `mean` summary statistic to the one of the true data, we choose reasonable values of $a_0,b_0$.
 
-Here, another important problem for this model is how to choose hyperparameters $a_0,b_0$. We decide to use a method similar to model checking. First, we propose a pair of possible $a_0,b_0$. Second, we simulate a $\lambda$ and a matrix of "Fake Data" which is generated from normal distribution $N(0,1)$ based on our model. Then we could get a vector of generated responses following the model generating process and obtain a summary statistic (e.g., mean) of the responses. We repeat the previous steps for 1000 times and obtain the distribution of the summary statistic. Finally, comparing the distribution of `mean` summary statistic to the one of the true data, we choose reasonable values of $a_0,b_0$.
-
-```{r,out.height='50%',out.width='50%',fig.align='center',fig.cap='Selection of hyperparameters a0, b0',fig.pos='H'}
+```{r,out.height='45%',out.width='45%',fig.align='center',fig.cap='Selection of hyperparameters a0, b0',fig.pos='H'}
 ## a,b: a proposal of hyperparamters
 ## k: number of predictors, n : number of observations
 hyperprior_para_seletion=function(a,b,n,k){
@@ -430,7 +428,7 @@ legend(2, 1.2, c("prior",'posterior'), col=c("red",'black'), lty=c(1,1))
 ## dev.off()
 ```
 
-```{r,out.height='50%',out.width='50%',fig.align='center',fig.cap='Histogram of the posterior distribution of lambda',fig.pos='H'}
+```{r,out.height='45%',out.width='60%',fig.align='center',fig.cap='Histogram of the posterior distribution of lambda',fig.pos='H'}
 knitr::include_graphics(c("lambda.png"))
 ```
 
@@ -454,10 +452,10 @@ ci %>% # if include intercept
 ## dev.off()
 ```
 
-Figure 7 shows point estimate and estimated confidence intervals of parameters $\beta,\beta_0$ from all three different models above.
+Figure 7 shows point estimate and estimated confidence intervals of parameters $\beta,\beta_0$ from all three different models above. Here, we take the mean of posterior samples as the point estimate for bayesian models. 
 
 
-```{r,fig.align='center',fig.cap='Confidence interval and point estimate of beta',fig.pos='H'}
+```{r,fig.align='center',fig.cap='Confidence interval and point estimate of beta',fig.pos='H',out.height='80%',out.width='80%'}
 knitr::include_graphics(c("ci.png"))
 ```
 
@@ -469,7 +467,7 @@ In conclusion, bayesian logistic regression with NEG prior is a very efficient m
 
 ### 4.2 Prediction
 
-Based on standard logistic regression model, it is easy to make predictions using function `predict`. We make predictions and obtain the confusion matrix with 22 right predictions and 8 wrong ones as below.
+Based on standard logistic regression model, it is easy to make predictions using function `predict`. We make predictions and obtain the confusion matrix with 22 right predictions and 8 wrong ones as below. The `accuracy` is about 73.33%. 
 
 ```{r}
 ## Prediction of Logistic Regression: 
@@ -490,9 +488,10 @@ data.frame(v1=c('Actual: No','Actual: Yes'),v2=c(11, 4),v3=c(4, 11)) %>%
   kable_styling(latex_options = c("striped", "hold_position"))
 ```
 
-If we want to use the fitted bayesian logistic regression models to make predictions for comparison, we should sample from the posterior distributions of $\beta,\beta_0$, as the posterior distribution has beed updated by incorporating information from data and prior. To do this, we first randomly draw samples of $\beta$ from the posterior distribution many times. And then we generate new $y$ which has the same size of responses as the test dataset for each sample of $\beta$. In this way, we could obtain many groups of predictions for test data. Finally, we compare each group of predicted responses with the original test data.
+To compare the models, we are going to use two indices `log-loss` and `sensitivity` instead of `accuracy` to evaluate the prediction performance of the three models.
 
-In the next step, we are going to use two indices `log-loss` and `sensitivity` to evaluate the prediction performances of the three models.
+For prediction analysis, we should generate predictive samples from the posterior distributions of $\beta,\beta_0$, as the posterior distribution has beed updated by incorporating information from data and prior. To do this, we first randomly draw samples of $\beta$ from the posterior distribution many times. And then we generate new $y$ which has the same size of responses as the test dataset for each sample of $\beta$. In this way, we could obtain many groups of predictions for test data. Finally, we compare each group of predicted responses with the original test data.
+
 
 ```{r}
 ## Prediction of Bayesian Logistic Regression with N-IG prior:
@@ -538,14 +537,14 @@ sensitivity3=mean(sensitivity3_dist)
 
 #### 4.2.1 Log-Loss
 
-Log-loss or logarithmic loss is a metric used in classification problems to compare the prediction performances of different models. The lower the log-loss is, the better the performance is. Log-loss also requires the raw probabilities $P(y=1|\beta,\beta_0)$, as well as the true response. For logistic regression, log-loss is defined as:
+To combine raw probabilities $P(y=1|\beta,\beta_0)$ as well as the true response, we use log-loss rather than `accuracy` for predication analysis. Log-loss or logarithmic loss is a metric used in classification problems to compare the prediction performance of different models. The lower the log-loss is, the better the performance is. For logistic regression, log-loss is defined as:
 
 \[-log(y|p)=-ylog(p)-(1-y)log(1-p)\]
 \[\textup{ where } y \textup{ is the target value 0 or 1, } p \textup{ is the probability } P(y=1|\beta,\beta_0).\]
 
 Using this formula, we calculate the log-loss value of the standard logistic regression and the density distributions of the log-loss values of bayesian logistic regression models and show them in Figure 8. Average log-loss values for bayesian methods are also computed and marked in the plot. 
 
-```{r,out.height='50%',out.width='60%',fig.align='center',fig.cap='Histogram of predictive log-loss',fig.pos='H'}
+```{r,out.height='45%',out.width='45%',fig.align='center',fig.cap='Histogram of predictive log-loss',fig.pos='H'}
 logloss23=melt(data.frame('N-IG'=logloss2_dist,'NEG'=logloss3_dist))
 names(logloss23)=c('prior','value')
 ggplot(logloss23,aes(x=value, fill=prior))+
@@ -562,11 +561,11 @@ It is shown that the log-loss values of bayesian models have a large improvement
 
 ### 4.2.2 Sensitivity
 
-Sensitivity is another index of great importance to heart disease detection. If a patient does have heart disease, it will be a big deal if doctors misdiagnose him as not having. Sensitivity here is used to measure the true positive rate of our prediction. That is, the proportion of the patients with heart diseases to be diagnosed correctly.
+`Sensitivity` is another index of great importance to heart disease detection. If a patient does have heart disease, it will be a big deal if doctors misdiagnose him as not having. `Sensitivity` here is used to measure the true positive rate of our prediction. That is, the proportion of the patients with heart diseases to be diagnosed correctly.
 
-We also use a plot to illustrate the superiority of bayesian logistic regression model with NEG prior in sensitivity. See Figure 9. Standard logistic regression model produces a sensitivity of 68.25% and bayesian model with N-IG prior shows 72.05% sensitivity, while bayesian model with NEG prior has an average sensitivity of 74.56% which is higher than both of others.
+We also use a plot to illustrate the superiority of bayesian logistic regression model with NEG prior in `sensitivity`. See Figure 9. Standard logistic regression model produces a `sensitivity` of 68.25% and bayesian model with N-IG prior shows 72.05% `sensitivity`, while bayesian model with NEG prior has an average `sensitivity` of 74.56% which is higher than both of others.
 
-```{r,out.height='50%',out.width='60%',fig.align='center',fig.cap='Histogram of predictive sensitivity',fig.pos='H'}
+```{r,out.height='45%',out.width='45%',fig.align='center',fig.cap='Histogram of predictive sensitivity',fig.pos='H'}
 sensitivity23=melt(data.frame('N-IG'=sensitivity2_dist,'NEG'=sensitivity3_dist))
 names(sensitivity23)=c('prior','value')
 ggplot(sensitivity23,aes(x=value, fill=prior))+
@@ -577,7 +576,7 @@ ggplot(sensitivity23,aes(x=value, fill=prior))+
   xlab('log-loss')
 ```
 
-In conclusion, bayesian logistic regression model with shrinkage prior (NEG prior) outperforms other two models in prediction. The bayesian logistic regression models both have a better prediction performance than the standard logistic regression, which indicates the significance and powerfulness of the bayesian analysis. 
+In conclusion, bayesian logistic regression model with shrinkage prior (NEG prior) outperforms other two models in prediction. The bayesian logistic regression models both have a better prediction performance than the standard logistic regression, which indicates the significance and power of the bayesian analysis. 
 
 ## 5. Conclusion & Future Work
 
@@ -587,7 +586,7 @@ We may also include sparse assumption of solutions to shrink the parameters of t
 
 For this dataset, bayesian logistic regression with NEG prior has the best prediction performance in both log-loss and sensitivity compared to standard logistic regression and bayesian logistic regression with N-IG prior. And the two bayesian logistic regression models both have a better prediction performance than the standard logistic regression, which shows the significance and powerfulness of the bayesian analysis.
 
-For future work, we may try more bayesian models with various priors and test their performances in prediction.
+For future work, the benefit of bayesian logistic models should be verified for datasets from different clinic. Moreover, as the highest sensitivity of bayesian model with NEG is only about 74.56%, we expect that other classification methods may have better prediction performance.
 
 
 ## 6. Reference
@@ -606,8 +605,3 @@ Park, T. & Casella, G. (2008). The Bayesian LASSO, Journal of the American Stati
 Detrano, R., Janosi, A., Steinbrunn, W., Pfisterer, M., Schmid, J. J., Sandhu, S., Guppy, K., Lee, S. & Froelicher, V. (1989). International application of a new probability algorithm for the diagnosis of coronary artery disease. The American journal of cardiology, 64(5): 304-310. 
 
 MediaWiki (2017). Log-Loss. http://wiki.fast.ai/index.php/Log_Loss
-
-
-
-
-

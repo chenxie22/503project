@@ -160,7 +160,7 @@ Based on the fitted models, the prediction accuracy of multinomial logistic regr
 
 ### 3.1 Quadratic discriminant analysis (QDA)
 
-QDA is a more flexible discriminant method based on LDA. Comapred to LDA, QDA relaxes the limitation of the same variance of normal distribution. Therefore, QDA could be applied to more scenarios and larger range of datasets. In this step, we first fit QDA classifiers on this dataset and then discuss about our prediction result together with multinomial logistic regression.
+QDA is a more flexible discriminant method based on LDA. Comapred to LDA, QDA relaxes the limitation of the same variance of normal distribution. It could thus be applied to more scenarios and larger range of datasets. In this step, we first fit QDA classifiers on this dataset and then discuss about our prediction result together with multinomial logistic regression.
 
 ```{r}
 ## LDA

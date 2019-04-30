@@ -157,31 +157,8 @@ In order to verify our guess above that our decision boundary is non-linear, we 
 
 Based on the fitted models, the prediction accuracy of multinomial logistic regression and LDA on test data set are only 34.5% and 34.8% respectively, which are quite disappointing for this dataset. But we could not simply conclude our decison boundary to be non-linear this time, we are encouraged to try non-linear version models of multinomial logistic regression and LDA in the next step. If these models show great improvement regarding prediction performance, we could confirm our initial guess and try other flexible models.
 
-### 3.1 Multinomial Logistic Regression with Quadratic Terms
 
-As logistic regression models could only produce linear decision boundary, we add quadratic terms of each predictor into the original model to generalize it. The modified model is more complicated and could generate complex boundaries to meet our need. We fit a multinomial logistic regression included quadratic terms to make prediction below. 
-
-```{r, message=FALSE}
-## Multinomial Logistic Regression
-set.seed(3)
-lr_fit1 = multinom(V65~., data=g_new[train,], trace=FALSE)
-lr_fit2 = multinom(V65~poly(V2,2)+poly(V10,2)+poly(V18,2)+poly(V26,2)+poly(V34,2)+poly(V42,2)+poly(V50,2)+poly(V58,2)+poly(V7,2)+poly(V15,2)+poly(V23,2)+poly(V31,2)+poly(V39,2)+poly(V47,2)+poly(V55,2)+poly(V63,2), data=g_new[train,], trace=FALSE)
-lr_pred1 = predict(lr_fit1, g_new[-train,])
-accuracy_lr1 = mean(lr_pred1 == g_new[-train,'V65'])
-lr_pred2 = predict(lr_fit2, g_new[-train,])
-accuracy_lr2 = mean(lr_pred2 == g_new[-train,'V65'])
-
-# Table 3: Logistic Regression Prediction
-lr_pred = unname(cbind(table(g_new[-train,'V65'], lr_pred1), table(g_new[-train,'V65'], lr_pred2)))
-colnames(lr_pred) = c("Linear 0","1","2","3","Quadratic 0","1","2","3")
-knitr::kable(data.frame("Truth"=0:3, lr_pred), align = "c",
-             col.names = c("Truth vs Logistic Prediction", colnames(lr_pred)),
-             caption = "Logistic Regression (Linear & Quadratic) Prediction")
-```
-
-From the confusion matrix of multinomial logistic regression in Table 3, we saw that adding quadratic terms in the logistic regression model greatly increased the prediction accuracy, from previous 34.5% to current 88.8%. This confirmed our expectation in data exploration that the decision boundary between classes was not linear. 
-
-### 3.2 LDA & 3.3 QDA
+### 3.1 Quadratic discriminant analysis (QDA)
 
 We then fitted LDA and QDA classifiers to the dataset. 
 
@@ -199,19 +176,37 @@ qda_pred = predict(qda_fit, g_new[-train,])$class
 accuracy_qda = mean(qda_pred==g_new[-train,'V65'])
 ```
 
+### 3.2 Multinomial Logistic Regression with Quadratic Terms (LR)
+
+As logistic regression models could only produce linear decision boundary, we add quadratic terms of each predictor into the original model to generalize it. The modified model is more complicated and could generate complex boundaries to meet our need. We fit a multinomial logistic regression included quadratic terms to make prediction below. 
+
+```{r, message=FALSE}
+## Multinomial Logistic Regression
+set.seed(3)
+lr_fit1 = multinom(V65~., data=g_new[train,], trace=FALSE)
+lr_fit2 = multinom(V65~poly(V2,2)+poly(V10,2)+poly(V18,2)+poly(V26,2)+poly(V34,2)+poly(V42,2)+poly(V50,2)+poly(V58,2)+poly(V7,2)+poly(V15,2)+poly(V23,2)+poly(V31,2)+poly(V39,2)+poly(V47,2)+poly(V55,2)+poly(V63,2), data=g_new[train,], trace=FALSE)
+lr_pred1 = predict(lr_fit1, g_new[-train,])
+accuracy_lr1 = mean(lr_pred1 == g_new[-train,'V65'])
+lr_pred2 = predict(lr_fit2, g_new[-train,])
+accuracy_lr2 = mean(lr_pred2 == g_new[-train,'V65'])
+
+```
+
+From the confusion matrix of multinomial logistic regression in Table 3, we saw that adding quadratic terms in the logistic regression model greatly increased the prediction accuracy, from previous 34.5% to current 88.8%. This confirmed our expectation in data exploration that the decision boundary between classes was not linear. 
+
 ```{r}
 # Table 4: LDA, QDA
-lqda_pred = unname(cbind(table(g_new[-train,'V65'], lda_pred), 
-                    table(g_new[-train,'V65'], qda_pred)))
-colnames(lqda_pred) = c("LDA 0","1","2","3","QDA 0","1","2","3")
+lqda_pred = unname(cbind(table(g_new[-train,'V65'], qda_pred), 
+                    table(g_new[-train,'V65'], lr_pred2)))
+colnames(lqda_pred) = c("QDA 0","1","2","3","LR 0","1","2","3")
 knitr::kable(data.frame("Truth"=0:3, lqda_pred),
-             col.names = c("Truth vs", colnames(lqda_pred)), align = "c",
-             caption = "LDA & QDA Prediction")
+             col.names = c("Truth  ", colnames(lqda_pred)), align = "c",
+             caption = "QDA & LR Prediction")
 ```
 
 Here we could see that the classifier QDA with quadratic classification boundary had an overwhelming advantage over the classifier LDA with linear boundary regarding the prediction accuracy. And QDA had a very good prediction performance with its prediction accuracy over 90.9%.
 
-### 3.4 KNN
+### 3.3 K-Nearest Number (KNN)
 
 Next we tried KNN on this dataset. We selected K as 3 by finding the corresponding K with the smallest 5-fold cross validation error in the training set, which was shown in Figure 6.
 
@@ -258,18 +253,8 @@ knn_pred = knn(g_new[train,-17], g_new[-train,-17], g_new[train,17], k=3)
 accuracy_knn = mean(knn_pred == g_new[-train,17])
 ```
 
-```{r}
-# Table 5: KNN
-k_pred = unname(cbind(table(g_new[-train,'V65'], knn_pred), 1))[,-5]
-colnames(k_pred) = c("0","1","2","3")
-knitr::kable(data.frame("Truth"=0:3, k_pred),
-             col.names = c("Truth vs KNN", colnames(k_pred)), align = "c",
-             caption = "KNN (K=3) Prediction")
-```
 
-Table 5 indicated that KNN (K=3) also performed well on this dataset, although its performance was little worse than the logistic regression with quadratic terms and QDA.
-
-### 3.5 SVM
+### 3.4 Support Vector Machine (SVM)
 
 Fit the SVM classifiers with radial kernel and polynomial kernel to the dataset. The optimal parameters such as cost, gamma, degree were chosen by minimizing the validation errors. Note that here we used validation instead of cross validation under consideration of the computational cost. For the SVM with radial kernel, the optimal parameters chosen were that cost = 1, gamma = 0.5 . For the SVM with polynomial kernel, the optimal parameters cost = 100, degree = 2. 
 
@@ -337,7 +322,7 @@ knitr::kable(data.frame("Truth"=0:3, svm_pred),
 
 Table 6 showed that SVM with these two kernels both performed well, with the one with polynomial kernel having higher accuracy rate than the one with the radial kernel. We saw that the SVM with polynomial kernel had optimal degree 2 and relatively better prediction performance, indicating that the decision boundary between classes probably did have quadratic curves. 
 
-### 3.6 Classification Tree & 3.7 Random Forest
+### 3.5 Classification Tree (CART) & Random Forest (RF)
 
 Finally we fitted classification tree and random forest to the dataset. 
 
@@ -382,7 +367,7 @@ knitr::kable(data.frame("Truth"=0:3, t_pred),
              caption = "Decision Tree and Random Forest Prediction")
 ```
 
-### Prediction Accuracy Comparison
+### 3.6 Prediction Accuracy Comparison
 
 ```{r}
 t2=data.frame(method=c("Logistic Regression","Logistic Regression with quadratic terms","LDA","QDA","KNN","SVM (radial)","SVM (polynomial)","Classification Tree","Random Forest"),
@@ -401,6 +386,11 @@ This specific dataset was balanced and clearly had non-linear, probably quadrati
 In order to reduce dimensionality, we used the random forest and stepwise forward selection method to do variable selection. We found that the motion of the muscles corresponding to the 2nd and 7th sensors are almost decisive for these 4 gestures. 
 
 Among all the classification methods we tried, random forest performed the best, the classifiers with quadratic decision boundary such as QDA, SVM with degree-2 polynomial kernel and logistic regression with quadratic terms all performed quite well. 
+
+## 5. Reference
+
+
+
 
 
 

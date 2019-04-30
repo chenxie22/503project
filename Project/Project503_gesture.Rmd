@@ -192,8 +192,6 @@ accuracy_lr2 = mean(lr_pred2 == g_new[-train,'V65'])
 
 ```
 
-From the confusion matrix of multinomial logistic regression in Table 3, we saw that adding quadratic terms in the logistic regression model greatly increased the prediction accuracy, from previous 34.5% to current 88.8%. This confirmed our expectation in data exploration that the decision boundary between classes was not linear. 
-
 ```{r}
 # Table 4: LDA, QDA
 lqda_pred = unname(cbind(table(g_new[-train,'V65'], qda_pred), 
@@ -204,7 +202,7 @@ knitr::kable(data.frame("Truth"=0:3, lqda_pred),
              caption = "QDA & LR Prediction")
 ```
 
-Here we could see that the classifier QDA with quadratic classification boundary had an overwhelming advantage over the classifier LDA with linear boundary regarding the prediction accuracy. And QDA had a very good prediction performance with its prediction accuracy over 90.9%.
+From the confusion matrix, we could see that QDA had a very good prediction performance with its prediction accuracy over 90.9%. The classifier QDA with quadratic classification boundary had an overwhelming advantage over the classifier LDA with linear boundary regarding the prediction accuracy. In addition, multinomial logistic regression and QDA in Table 3, we saw that adding quadratic terms in the logistic regression model greatly increased the prediction accuracy, from previous 34.5% to current 88.8%. As quadratic models improve the prediction accuracy greatly, our expectation in data exploration is confirmed that the decision boundary between classes was not linear.
 
 ### 3.3 K-Nearest Number (KNN)
 

@@ -206,7 +206,7 @@ From the confusion matrix, we could see that QDA had a very good prediction perf
 
 ### 3.3 K-Nearest Number (KNN)
 
-Next we tried KNN on this dataset. We selected K as 3 by finding the corresponding K with the smallest 5-fold cross validation error in the training set, which was shown in Figure 6.
+As we are sure that the decision boundary was non-linear, we wanted to try more flexible models with less assumptions on distribution of the dataset. Therefore, we tried KNN method on this dataset. First, we performed 5-fold cross validation on training set to choose the corresponding K with the smallest cross-validation error. From Figure 6, we could see that K equals 3 was the optimal choice. After that, we fitted KNN model with K=3 again and obtained the prediction accuracy.
 
 ```{r}
 ## Initialize
@@ -250,7 +250,7 @@ set.seed(3)
 knn_pred = knn(g_new[train,-17], g_new[-train,-17], g_new[train,17], k=3)
 accuracy_knn = mean(knn_pred == g_new[-train,17])
 ```
-
+The accuracy of 84.63% indicates that KNN (K=3) also performed well on this dataset, although its performance was a little worse than the logistic regression with quadratic terms and QDA.
 
 ### 3.4 Support Vector Machine (SVM)
 

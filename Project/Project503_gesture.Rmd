@@ -1,5 +1,5 @@
 ---
-title: 'Stats 503 Project: Predicting the Gestures'
+title: 'Predicting the Gestures'
 author: "Chen Xie, Xun Wang, Xinye, Jiang"
 date: "`r format(Sys.time(), '%B %d, %Y')`"
 output:
@@ -13,9 +13,14 @@ header-includes: \usepackage{float}
 knitr::opts_chunk$set(echo = FALSE, message=FALSE, warning = FALSE, fig.align='center')
 ```
 
-## 1. Introduction 
+## 1. Introduction and Motivation
 
-The dataset is about 11678 recordings of human hand muscle activity corresponding to four different hand gestures from a prosthetic control system. It has four classes of motions which are "rock", "scissors", "paper" and "ok" as the response variable. And the rest 64 variables showing the 8 consecutive readings of all 8 sensors are the explanatory variables. The specific data description can be seen in Table 1.
+Artificial Intelligence is extremely popular in our new technology age. It is widely applied in every aspect of our daily life, for example, business, industry and healthcare. Combining artificial intelligence and machine learning techniques, our project is going to delve into an dataset which collected 8 consecutive readings from 8 human arm muscle sensors (64 independent varaibles in total) to predict associated gestures for an artificial arm. 
+
+The dataset has about 11678 observations of human arm muscle activity corresponding to four different hand gestures from a prosthetic control system. It has four classes of motions which are "rock", "scissors", "paper" and "ok" as the response variable. Summary of variables is shown in Table 1. In this dataset, `gestures`, i.e. the `V65`, is our response variable. The variables `V1` to `V8` are related to the first readings of 8 sensors, `V9` to `V16` are related to the second readings of 8 sensors, etc. All predictors are continuous variables. 
+
+Our essential motivation for this project is to predict the `gestures` as accurately as possible. We want to fit with various multiple classification methods including logistic regression, LDA, QDA, KNN, SVM, classification tree and random forest, and find which has the best prediction performance. Although the sample size is large, some classification methods, such as KNN and QDA are not suitable for large number of predictors. So before performing model selection, we also want to reduce the dimension of predictors. We consider two possible methods, PCA and variable selection. In addition, we also want to know the important predictors for the 4 gestures. 
+
 
 ```{r}
 ## Table 1
@@ -25,12 +30,6 @@ cap="Data Description"
 knitr::kable(t1,format='pandoc',caption=cap,align='l',
              col.names=c('Variables names','Type','Description'))
 ```
-
-Is there any connection between the sensor and the hand gesture? Does the reading account for the hand gesture? 
-
-The goal of this project is to predict hand gestures based on the readings and sensors. 
-
-In the rest part of the project, we explored the dataset numerically and graphically, done variable selection based on the importance of the variables, and utilized various classification methods including logistic regression, LDA, QDA, KNN, SVM, classification tree and random forest to fit the data and calculated the prediction accuracy respectively. 
 
 ## 2. Data Exploration
 
@@ -51,14 +50,15 @@ library(dplyr);library(e1071);library(tree);library(class);library(MASS);
 library(nnet);library(randomForest);library(foreign);
 ```
 
-To have an intuitive sense of the dataset, first look at the barchart of the response variable "gesture" in Figure 1. We saw that the dataset was balanced, as each category of the response variable had around 2900 observations. 
 
-```{r,out.width='49%',fig.cap="Barchart of Gestures and Scatterplot of Sensor 2 and Sensor 7 from Reading 1",fig.show='hold',fig.pos="H"}
+### 2.1 Individual Variables
+
+To have an intuitive sense of the dataset, first we can have a look at the barchart of the response variable `gesture`, which is on the left side of the Figure 1. We see that the `gesture` is extremely  balanced, as each category of the response variable has around 2900 observations. It is good for following steps of analysis, especially for prediction. Next, we want to know more about independent variables. We have 64 predictors, and we find the individual distributions of all 64 predictors are quite similar, so we can only take first 8 variables `V1`-`V8` as examples, which are the first readings for 8 sensors. Table 2 is the summary table of `V1`-`V8`. Based on Table 1, we can find that there are some extreme values for `V1`-`V8`. To be more precise, we can also view each predictor from boxplot. Based on the right side boxplot in Figure 1 and take `V1` as example, the distribution of `V1` is heavily tailed. Combined with the numeric summaries of the predictor variables in Table 2 (note that we only show part of it), all the predictors were focused around 0 and had long symmetric tails. 
+
+```{r,out.width='49%',fig.cap="Barchart of Gestures and Boxplot of V1",fig.show='hold',fig.pos="H",out.height='60%'}
 # Response barchart & Scatterplot
-knitr::include_graphics(c("response.png","scatterplot.png"))
+knitr::include_graphics(c("response.png","boxplot1.png"))
 ```
-
-We also drew the scatterplot of two sensors in reading 1 in Figure 1. We had 64 predictor variables which are quite high dimensional, so we tried pairwise scatterplots of this kind to get some sense of the dataset. We can see that there is no obvious structure in the dataset. Combined with the numeric summaries of the predictor variables in Table 2 (note that we only show part of it), all the predictors were focused around 0 and had long symmetric tails. As no specific pattern was detected, PCA won't be a good way to reduce dimension. We tried PCA and found that the first 35 principal components merely covered 80% of the variance which meant that the effect of this dimension reduction method to this dataset was terrible.
 
 ```{r}
 ## Table 2: Summary
@@ -73,28 +73,42 @@ cap="Numerical Summaries (only part is shown)"
 knitr::kable(t2,format='pandoc',caption=cap,align='l',digits = 2)
 ```
 
-```{r,out.width='49%',fig.cap="Correlation Plots",fig.show='hold',fig.align='center',fig.pos="H"}
+### 2.2 Correlation Between Predictors
+
+Then, we want to explore the relationship between predictors. The left plot in Figure 2 is the correlation matrix of all 64 predictors. According to this correlation matrix, we find some interesting structure. To be more clearly, we can zoom in and only focus on the first 16 varaibles, that is, `V1`-`V16`, which is shown on the right side of Figure 2. The grey boxes represent correlation matrix within the same reading. The small blue boxes are negative corrletions between adjacent readings of the same sensor. And the small red boxes are the positive correlations between adjacent sensors of the same reading. To see exact correlations between sensors, we also rearrange the correlation matrix in the order of sensors, which is shown in Figure 3. So in this correlation matrix, the first 8 variables are the 8 reading for the first sensor, the next 8 ones are the readings for the second sensor, etc. The reordered correlation matrix reconfirms our conclusions before. The orange box also shows that the same reading of the first and second sensors are positively correlated. Based on this correlation matrix, we can also view that the first 4 sensors are almost uncorrelation to the last 4 sensors. The results of correlation matrix make sense. As we should expect that activities of nearby muscle or consecutive time have some similarities. 
+
+```{r,out.width='49%',fig.cap="Correlation Plots",fig.show='hold',fig.align='center',fig.pos="H",,out.height='60%'}
 # Correlation plots
-knitr::include_graphics(c("correlation1.png","correlation2.png"))
+knitr::include_graphics(c("correlation_overview","correlation1.png"))
 ```
 
-To figure out the correlations between the predictors, look at the correlation plots in Figure 2. From the left plot of the correlations of first two readings, we saw that the same sensors in the adjacent readings were negatively correlated, pairwise adjacent sensors in each reading were positively correlated while the first 4 and last 4 sensors in each reading were nearly uncorrelated. The right plot of the correlations in sensors order reconfirmed our conclusions before.
+```{r,out.width='49%',fig.cap="Correlation Plots",fig.show='hold',fig.align='center',fig.pos="H",,out.height='60%'}
+# Correlation plots
+knitr::include_graphics("correlation2.png")
+```
 
-```{r,out.width='49%',fig.cap="Density Plots",fig.show='hold',fig.pos="H"}
+### 2.3 Relationship with Response
+
+Next, we explore the relationship between predictors and the response. Using the density plots in Figure 4, we address the different significance of each predictor variable in prediction for gesture. For example, the densities of sensor 1 in reading 1 for 4 gesture classes were quite similar, while the densities of sensor 7 in reading 1 were quite different. In this case, the sensor 7 should be put on more weights for prediction than the sensor 1. The importance diversity encouraged us to do variable selection to reduce dimensions. 
+
+```{r,out.width='49%',fig.cap="Density Plots",fig.show='hold',fig.pos="H",,out.height='60%'}
 # Histograms of reading 1 of sensor 1 and sensor 7
 knitr::include_graphics(c("r1sensor1.png","r1sensor7.png"))
 ```
 
-Using the density plots in Figure 3, we addressed the different significance of each predictor variable in prediction for gesture. For example, the densities of sensor 1 in reading 1 for 4 gesture classes were quite similar, while the densities of sensor 7 in reading 1 were quite different. In this case, the sensor 7 should be put on more weights for prediction than the sensor 1. The importance diversity encouraged us to do model selection to reduce dimensions. 
+To visualize the data more comprehensively, we can look at the scatterplot and contour of density of `V2` and `V7` in Figure 5. The joint distributions of `V2` and `V7` look like normal with unequal variances for different gestures. Based on this plot, we expect that the decision boundary between the classes is non-linear and QDA may perform well on this dataset. 
 
-To visualize the data more comprehensively, look at the plot of the contour of density of V2 and V7 in Figure 4. The data looked like normal with unequal variances. Based on this plot, we expected that the decision boundary between the classes were non-linear and thus those classifiers generating linear boundaries such as LDA, logistic regression would perform poorly in this setting. 
 
-```{r,out.width='60%',out.height='60%',fig.cap="Contour of Density of V2 and V7",fig.show='hold',fig.pos="H"}
+```{r,out.width='49%',out.height='60%',fig.cap="Scatterplot and Contour of V2 and V7",fig.show='hold',fig.pos="H"}
 # Contour of density
-knitr::include_graphics(c("contour.png"))
+knitr::include_graphics(c("scatterplot.png","contour.png"))
 ```
 
-### Variable Selection
+### 2.4 PCA
+
+Looking at the pairwise scatterplot of `V2` and `V7` in Figure 5, it seems that `V2` and `V7` have no obvious pairwise structure. As no specific pattern was detected, PCA won't be a good way to reduce dimension. We tried PCA and found that the first 35 principal components merely covered 80% of the variance which meant that the effect of this dimension reduction method to this dataset was terrible.
+
+### 2.5 Variable Selection
 
 As mentioned before, we had 64 predictor variables and some were more important than others. Therefore, we tried two methods to do variable selection to reduce redundance and better the prediction performance and interpretability. 
 
@@ -104,7 +118,7 @@ The second method was to utilize stepwise forward selection based on AIC and BIC
 
 Finally we separately checked the overall prediction accuracy using 8 predictors, i.e., the 7th sensors in 8 readings, and the accuracy using 16 predictors, i.e., the 7th and 2nd sensors in 8 readings. And we reached the conclusion that the latter one had overall better performance than the former one. Thus, we finally decided to carry on the remaining analysis with 16 important predictors.
 
-```{r,fig.cap="The Importance of the Variables",fig.pos="H"}
+```{r,fig.cap="The Importance of the Variables",fig.pos="H",,out.height='60%'}
 # The Importance of the Variables
 ## Perform Variable Selection
 ## by random forest and check the importance of variables

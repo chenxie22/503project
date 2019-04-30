@@ -144,7 +144,7 @@ knitr::include_graphics(c("VarImport.png"))
 
 ## 3. Classification Methods
 
-In this part, we fitted various classification methods. In order to compare their prediction performance, we split the dataset into training and testing two parts. 
+In this part, we are about to fit various classification models using 16 significant variables selected using random forest. In order to compare their prediction performance, we first randomly split the dataset into training and testing parts at a ratio about 8:2. Classification models are built on training data set and test set is used to evaluate their prediction accuracy. 
 
 ```{r}
 ## Split the dataset into training and test sets
@@ -153,9 +153,13 @@ g_new=g[,c(seq(from=2,to=58,by=8),seq(from=7,to=63,by=8),65)]
 train=sample(1:nrow(g_new),size=nrow(g_new)*0.8,replace=FALSE)
 ```
 
-### 3.1 Logistic Regression
+In order to verify our guess above that our decision boundary is non-linear, we first try two linear models, i.e., linear multinomial logistic regression and LDA, as both multinomial logistic regression and LDA are powerful models we usually used in machine learning when decision boundary is approximately linear. Multinomial logistic regression is a generalization of original logistic regression when the response has multiple classes. And LDA assumes data of each class follows a normal distribution with identical variance.
 
-The first model we tried was the logistic regression. We fitted the original logistic regression which had all its terms linear in the model and also fitted one which included quadratic terms of the important variables. 
+Based on the fitted models, the prediction accuracy of multinomial logistic regression and LDA on test data set are only 34.5% and 34.8% respectively, which are quite disappointing for this dataset. But we could not simply conclude our decison boundary to be non-linear this time, we are encouraged to try non-linear version models of multinomial logistic regression and LDA in the next step. If these models show great improvement regarding prediction performance, we could confirm our initial guess and try other flexible models.
+
+### 3.1 Multinomial Logistic Regression with Quadratic Terms
+
+As logistic regression models could only produce linear decision boundary, we add quadratic terms of each predictor into the original model to generalize it. The modified model is more complicated and could generate complex boundaries to meet our need. We fit a multinomial logistic regression included quadratic terms to make prediction below. 
 
 ```{r, message=FALSE}
 ## Multinomial Logistic Regression
@@ -175,7 +179,7 @@ knitr::kable(data.frame("Truth"=0:3, lr_pred), align = "c",
              caption = "Logistic Regression (Linear & Quadratic) Prediction")
 ```
 
-From the logistic regression prediction in Table 3, we saw that adding quadratic terms in the logistic regression model largely increased the prediction accuracy from 34.5% to 88.8%. This confirmed our expectation before that the decision boundary between classes was not linear. 
+From the confusion matrix of multinomial logistic regression in Table 3, we saw that adding quadratic terms in the logistic regression model greatly increased the prediction accuracy, from previous 34.5% to current 88.8%. This confirmed our expectation in data exploration that the decision boundary between classes was not linear. 
 
 ### 3.2 LDA & 3.3 QDA
 

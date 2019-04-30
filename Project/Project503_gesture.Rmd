@@ -60,19 +60,6 @@ To have an intuitive sense of the dataset, first we can have a look at the barch
 knitr::include_graphics(c("response.png","boxplot1.png"))
 ```
 
-```{r}
-## Table 2: Summary
-summary_col = function(x) 
-  {c(unname(quantile(x,c(0,0.25,0.5))),mean(x),unname(quantile(x,c(0.75,1))))}
-t2=data.frame(Summary=c("Min.","1st Qu.","Median","Mean","3rd Qu.","Max."),
-              V1=summary_col(g[,1]),V2=summary_col(g[,2]),
-              V3=summary_col(g[,3]),V4=summary_col(g[,4]),
-              V5=summary_col(g[,5]),V6=summary_col(g[,6]),
-              V7=summary_col(g[,7]),V8=summary_col(g[,8]))
-cap="Numerical Summaries (only part is shown)"
-knitr::kable(t2,format='pandoc',caption=cap,align='l',digits = 2)
-```
-
 ### 2.2 Correlation Between Predictors
 
 Then, we want to explore the relationship between predictors. The left plot in Figure 2 is the correlation matrix of all 64 predictors. We find some interesting structure in this correlation matrix. To be more clearly, we can zoom in and only focus on the first 16 varaibles, that is, `V1`-`V16`, which is shown on the right side of Figure 2. The grey boxes represent correlation matrix within the same reading. The small blue boxes are negative correlations between adjacent readings of the same sensor. And the small red boxes are the positive correlations between adjacent sensors of the same reading. To see exact correlations between sensors, we also rearrange the correlation matrix in the order of sensors, which is shown in Figure 3. So in this correlation matrix, the first 8 variables are the 8 readings for the first sensor, the next 8 ones are the readings for the second sensor, etc. The reordered correlation matrix reconfirms our conclusions before. The orange box also shows that the same reading of the first and second sensors are positively correlated. Based on this correlation matrix, we can also view that the first 4 sensors are almost uncorrelated to the last 4 sensors. The results of correlation matrix make sense, as we expect that activities of nearby muscle or consecutive time have some similarities. 

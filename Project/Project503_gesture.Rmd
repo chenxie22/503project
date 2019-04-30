@@ -153,7 +153,7 @@ g_new=g[,c(seq(from=2,to=58,by=8),seq(from=7,to=63,by=8),65)]
 train=sample(1:nrow(g_new),size=nrow(g_new)*0.8,replace=FALSE)
 ```
 
-In order to verify our guess above that our decision boundary is non-linear, we first try two linear models, i.e., linear multinomial logistic regression and LDA, as both multinomial logistic regression and LDA are powerful models we usually used in machine learning when decision boundary is approximately linear. Multinomial logistic regression is a generalization of original logistic regression when the response has multiple classes. And LDA assumes data of each class follows a normal distribution with identical variance.
+In order to verify our guess above that the decision boundary is non-linear, we first try two linear models, i.e., linear multinomial logistic regression and LDA. Both multinomial logistic regression and LDA are powerful models that we usually use in machine learning when the decision boundary is approximately linear. Multinomial logistic regression is a generalization of original logistic regression when the response has multiple classes. And LDA assumes data of each class follows a normal distribution with identical variance.
 
 Based on the fitted models, the prediction accuracy of multinomial logistic regression and LDA on test data set are only 34.5% and 34.8% respectively, which are quite disappointing for this dataset. But we could not simply conclude our decison boundary to be non-linear this time, we are encouraged to try non-linear version models of multinomial logistic regression and LDA in the next step. If these models show great improvement regarding prediction performance, we could confirm our initial guess and try other flexible models.
 

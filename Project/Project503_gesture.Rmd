@@ -55,7 +55,7 @@ library(nnet);library(randomForest);library(foreign);
 
 To have an intuitive sense of the dataset, first we can have a look at the barchart of the response variable `gesture`, which is on the left side of the Figure 1. We see that the `gesture` is extremely balanced, as each category of the response variable has around 2900 observations. It is good for following analysis, especially for prediction. Next, we want to know more about the independent variables. We find that the individual distributions of all 64 predictors are quite similar, so we can only take the first variable `V1` as an example, which is the first reading of the first sensor. Based on the right side boxplot in Figure 1, we notice that the distribution of `V1` is focused around 0 and have long symmetric tails. 
 
-```{r,out.width='49%',fig.cap="Barchart of Gestures and Boxplot of V1",fig.show='hold',fig.pos="H",out.height='60%'}
+```{r,out.width='40%',fig.cap="Barchart of Gestures and Boxplot of V1",fig.show='hold',fig.pos="H",out.height='60%'}
 # Response barchart & Scatterplot
 knitr::include_graphics(c("response.png","boxplot1.png"))
 ```
@@ -64,12 +64,12 @@ knitr::include_graphics(c("response.png","boxplot1.png"))
 
 Then, we want to explore the relationship between predictors. The left plot in Figure 2 is the correlation matrix of all 64 predictors. We find some interesting structure in this correlation matrix. To be more clearly, we can zoom in and only focus on the first 16 varaibles, that is, `V1`-`V16`, which is shown on the right side of Figure 2. The grey boxes represent correlation matrix within the same reading. The small blue boxes are negative correlations between adjacent readings of the same sensor. And the small red boxes are the positive correlations between adjacent sensors of the same reading. To see exact correlations between sensors, we also rearrange the correlation matrix in the order of sensors, which is shown in Figure 3. So in this correlation matrix, the first 8 variables are the 8 readings for the first sensor, the next 8 ones are the readings for the second sensor, etc. The reordered correlation matrix reconfirms our conclusions before. The orange box also shows that the same reading of the first and second sensors are positively correlated. Based on this correlation matrix, we can also view that the first 4 sensors are almost uncorrelated to the last 4 sensors. The results of correlation matrix make sense, as we expect that activities of nearby muscle or consecutive time have some similarities. 
 
-```{r,out.width='49%',fig.cap="Correlation Plots",fig.show='hold',fig.align='center',fig.pos="H",,out.height='60%'}
+```{r,out.width='40%',fig.cap="Correlation Plots",fig.show='hold',fig.align='center',fig.pos="H",,out.height='60%'}
 # Correlation plots
 knitr::include_graphics(c("correlation_overview","correlation1.png"))
 ```
 
-```{r,out.width='49%',fig.cap="Correlation Plots",fig.show='hold',fig.align='center',fig.pos="H",,out.height='60%'}
+```{r,out.width='40%',fig.cap="Correlation Plots",fig.show='hold',fig.align='center',fig.pos="H",,out.height='60%'}
 # Correlation plots
 knitr::include_graphics("correlation2.png")
 ```
@@ -78,7 +78,7 @@ knitr::include_graphics("correlation2.png")
 
 Next, we explore the relationship between predictors and the response. Using the density plots of every predictor with different response classes, we address the different significance of each predictor variable for `gesture`. For example, in Figure 4, the densities of sensor 1 in reading 1 for 4 gesture classes were quite similar, while the densities of sensor 7 in reading 1 were quite different. In this case, the sensor 7 should be put on more weights for prediction than the sensor 1. The importance diversity encouraged us to do variable selection to reduce dimensions. 
 
-```{r,out.width='49%',fig.cap="Density Plots",fig.show='hold',fig.pos="H",,out.height='60%'}
+```{r,out.width='40%',fig.cap="Density Plots",fig.show='hold',fig.pos="H",,out.height='60%'}
 # Histograms of reading 1 of sensor 1 and sensor 7
 knitr::include_graphics(c("r1sensor1.png","r1sensor7.png"))
 ```
@@ -86,7 +86,7 @@ knitr::include_graphics(c("r1sensor1.png","r1sensor7.png"))
 To visualize the data more comprehensively, we can look at the scatterplot and contour of density of `V2` and `V7` in Figure 5. The joint distributions of `V2` and `V7` look like normal with unequal variances for different gestures. Based on this plot, we expect that the decision boundary between the classes is non-linear and Quadratic discriminant analysis (QDA) may perform well on this dataset. 
 
 
-```{r,out.width='49%',out.height='60%',fig.cap="Scatterplot and Contour of V2 and V7",fig.show='hold',fig.pos="H"}
+```{r,out.width='40%',out.height='60%',fig.cap="Scatterplot and Contour of V2 and V7",fig.show='hold',fig.pos="H"}
 # Contour of density
 knitr::include_graphics(c("scatterplot.png","contour.png"))
 ```
@@ -190,7 +190,7 @@ knitr::kable(data.frame("Truth"=0:3, lqda_pred),
 
 ### 3.3 K-Nearest Numbers (KNN)
 
-Then we try nonparametric methods such as K-Nearest Numbers (KNN) on this dataset. With 5-fold cross validation, we select k as 3 at the smallest cross validation error on the training set, which was shown in Figure 7. The predictive accuracy is about 84.63%. The prediction performance is lower than QDA, so it possibly indicates that KNN with k=3 is too flexible for our data, resulting in overfitting. Another possible reason is that KNN cannot handle high dimensional data. Though we reduced the dimension, we still have 16 predictors. 
+Then we try nonparametric methods such as K-Nearest Numbers (KNN) on this dataset. With 5-fold cross validation, we select k as 3 at the smallest cross validation error on the training set, which is shown in Figure 7. The predictive accuracy is about 84.63%. The prediction performance is lower than QDA, so it possibly indicates that KNN with k=3 is too flexible for our data, resulting in overfitting. Another possible reason is that KNN cannot handle high dimensional data. Though we reduced the dimension, we still have 16 predictors. 
 
 ```{r}
 ## Initialize
@@ -219,7 +219,7 @@ for(k in k_list) {
 }
 ```
 
-```{r, fig.cap=cap, fig.align = "center",out.height='50%',out.width='50%',fig.pos="H"}
+```{r, fig.cap=cap, fig.align = "center",out.height='40%',out.width='50%',fig.pos="H"}
 ## Plot validation errors
 cap = 'The 5-fold Cross Validation Errors for Each Choice of K.'
 plot(k_list, knn_cv_error, type='l', ylim=c(0.13, 0.23),
@@ -328,9 +328,10 @@ rf_pred = predict(rf_fit,newdata=g_new[-train,])
 accuracy_rf=mean(rf_pred==g_new$V65[-train])
 ```
 
-Random forest has almost the same performance as QDA, which is 91.14%. The partial plots of `V7` and `V18` shown in Figure 9 represent the effects of 7th sensor and 2nd sensor in each reading respectively. The influence of the 7th sensors to the gesture classes varied when they were closed to 0 and away from 0. 
+Random forest has almost the same performance as QDA, which is 91.14%. Becuase partial plots of 8 readings for the same sensor displaye a similar pattern, we just show the partial plots of `V7` and `V18` in Figure 9 as the representatives of 7th and 2nd sensor. Keeping other predictors unchangeable, the influence of the 7th and 2nd sensors to the `gesture` classes varies from time to time. It is not linear nor constant, so these senors produce a significant and non-linear influence to response. In general, the effects of sensors on response exhibite different patterns when they are close to 0 and away from 0.
 
-```{r,out.width='50%',fig.cap="Random Forest Partial Plots",fig.show='hold',fig.pos="H"}
+
+```{r,out.width='40%',fig.cap="Random Forest Partial Plots",fig.show='hold',fig.pos="H"}
 # Decision Tree Plot and Random Forest Partial Plots
 knitr::include_graphics(c("randomforest.png"))
 ```

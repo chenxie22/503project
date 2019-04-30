@@ -379,11 +379,11 @@ Table 8 collects the prediction accuracy rates of all the classification methods
 
 ## 4. Conclusion and Discussion 
 
-This specific dataset was balanced and clearly had non-linear, probably quadratic decision boundary between gesture classes. 
+This specific dataset is balanced and clearly has non-linear, probably quadratic decision boundary between gesture classes. 
 
-In order to reduce dimensionality, we used the random forest and stepwise forward selection method to do variable selection. We found that the motion of the muscles corresponding to the 2nd and 7th sensors are almost decisive for these 4 gestures. 
+In order to reduce dimensionality, we use the random forest and stepwise forward selection method to do variable selection. We find that the motion of the muscles corresponding to the 2nd and 7th sensors are almost decisive for these 4 gestures. 
 
-Among all the classification methods we tried, random forest performed the best, the classifiers with quadratic decision boundary such as QDA, SVM with degree-2 polynomial kernel and logistic regression with quadratic terms all performed quite well. 
+Among all the classification methods we try, random forest performs the best, the classifiers with quadratic decision boundary such as QDA, SVM with degree-2 polynomial kernel and logistic regression with quadratic terms all perform quite well. 
 
 ## 5. Reference
 

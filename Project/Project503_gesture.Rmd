@@ -389,6 +389,10 @@ Among all the classification methods we tried, random forest performed the best,
 
 ## 5. Reference
 
+Yashuk, K. (2019). Classify gestures by reading muscle activity. https://www.kaggle.com/kyr7plus/emg-4#0.csv
+
+Molnar, C. (2019). Interpretable Machine Learning. https://christophm.github.io/interpretable-ml-book/pdp.html
+
 
 
 

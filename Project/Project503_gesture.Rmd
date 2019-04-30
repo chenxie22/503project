@@ -106,7 +106,7 @@ knitr::include_graphics(c("scatterplot.png","contour.png"))
 
 ### 2.4 PCA
 
-Looking at the pairwise scatterplot of `V2` and `V7` in Figure 5, it seems that `V2` and `V7` have no obvious pairwise structure. As no specific pattern was detected, PCA won't be a good way to reduce dimension. We tried PCA and found that the first 35 principal components merely covered 80% of the variance which meant that the effect of this dimension reduction method to this dataset was terrible.
+Look at the pairwise scatterplot of `V2` and `V7` in Figure 5, it seems that `V2` and `V7` have no obvious pairwise structure. As no specific pattern is detected, PCA won't be a good way to reduce dimension. We try PCA and find that the first 35 principal components merely cover 80% of the variance which means that the effect of this dimension reduction method to this dataset is terrible.
 
 ### 2.5 Variable Selection
 

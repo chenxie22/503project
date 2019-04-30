@@ -254,7 +254,7 @@ The accuracy of 84.63% indicates that KNN (K=3) also performs well on this datas
 
 ### 3.4 Support Vector Machine (SVM)
 
-Fit the SVM classifiers with radial kernel and polynomial kernel to the dataset. The optimal parameters such as cost, gamma, degree were chosen by minimizing the validation errors. Note that here we used validation instead of cross validation under consideration of the computational cost. For the SVM with radial kernel, the optimal parameters chosen were that cost = 1, gamma = 0.5 . For the SVM with polynomial kernel, the optimal parameters cost = 100, degree = 2. 
+Fit the SVM classifiers with radial kernel and polynomial kernel to the dataset. The optimal parameters such as cost, gamma, degree are chosen by minimizing the validation errors. Note that here we use validation instead of cross validation under consideration of the computational cost. For the SVM with radial kernel, the optimal parameters chosen are that cost = 1, gamma = 0.5 . For the SVM with polynomial kernel, the optimal parameters cost = 100, degree = 2. 
 
 ```{r}
 ## SVM radial kernel
@@ -318,7 +318,7 @@ knitr::kable(data.frame("Truth"=0:3, svm_pred),
              caption = "SVM with Radial & Polynomial Kernel Prediction")
 ```
 
-Table 6 showed that SVM with these two kernels both performed well, with the one with polynomial kernel having higher accuracy rate than the one with the radial kernel. We saw that the SVM with polynomial kernel had optimal degree 2 and relatively better prediction performance, indicating that the decision boundary between classes probably did have quadratic curves. 
+Table 6 shows that SVM with these two kernels both perform well, with the one with polynomial kernel having higher accuracy rate than the one with the radial kernel. We see that the SVM with polynomial kernel has optimal degree 2 and relatively better prediction performance, indicating that the decision boundary between classes probably does have quadratic curves. 
 
 ### 3.5 Classification Tree (CART) & Random Forest (RF)
 

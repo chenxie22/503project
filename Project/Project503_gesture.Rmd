@@ -346,7 +346,7 @@ rf_pred = predict(rf_fit,newdata=g_new[-train,])
 accuracy_rf=mean(rf_pred==g_new$V65[-train])
 ```
 
-The random forest has the best prediction accuracy so far which is over 91.1%. Becuase partial plots of 8 readings from each sensor display a similar pattern, we just show the partial plots of `V7` and `V18` in Figure 8 as the representatives of 7th and 2nd sensor. Keeping other predictors unchangeable, the influence of the 7th and 2nd sensors to the gesture classes varies from time to time. It is not linear nor constant, so these senors produced a significant and non-linear influence to response. In general, the effects of sensors on response exhibited different patterns when they were closed to 0 and away from 0. 
+The random forest has the best prediction accuracy so far which is over 91.1%. Becuase partial plots of 8 readings from each sensor display a similar pattern, we just show the partial plots of `V7` and `V18` in Figure 8 as the representatives of 7th and 2nd sensor. Keeping other predictors unchangeable, the influence of the 7th and 2nd sensors to the gesture classes varies from time to time. It is not linear nor constant, so these senors produce a significant and non-linear influence to the response. In general, the effects of sensors on response exhibit different patterns when they are closed to 0 and away from 0. 
 
 ```{r,out.width='50%',fig.cap="Random Forest Partial Plots",fig.show='hold',fig.pos="H"}
 # Decision Tree Plot and Random Forest Partial Plots

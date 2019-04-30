@@ -250,7 +250,7 @@ set.seed(3)
 knn_pred = knn(g_new[train,-17], g_new[-train,-17], g_new[train,17], k=3)
 accuracy_knn = mean(knn_pred == g_new[-train,17])
 ```
-The accuracy of 84.63% indicates that KNN (K=3) also performed well on this dataset, although its performance was a little worse than the logistic regression with quadratic terms and QDA. The reason is that KNN method has difficulties to deal with high dimensional data as we mentioned in data exploration. 
+The accuracy of 84.63% indicates that KNN (K=3) also performs well on this dataset, although its performance is a little worse than the logistic regression with quadratic terms and QDA. The reason is that KNN method has difficulties in dealing with high dimensional data as mentioned before in data exploration part. 
 
 ### 3.4 Support Vector Machine (SVM)
 

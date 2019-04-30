@@ -178,7 +178,7 @@ accuracy_qda = mean(qda_pred==g_new[-train,'V65'])
 
 ### 3.2 Multinomial Logistic Regression with Quadratic Terms (LR)
 
-As logistic regression models could only produce linear decision boundary, we add quadratic terms of each predictor into the original model to generalize it. The modified model is more complicated and could generate complex boundaries to meet our need. We fit a multinomial logistic regression included quadratic terms to make prediction below. 
+As logistic regression models could only produce linear decision boundary, we add quadratic terms of each predictor into the original model to generalize it. The modified model is more complicated and could generate complex boundaries to meet our need. We fit a multinomial logistic regression including quadratic terms to make predictions below. 
 
 ```{r, message=FALSE}
 ## Multinomial Logistic Regression

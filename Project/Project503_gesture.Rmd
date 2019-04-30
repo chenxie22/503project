@@ -204,9 +204,9 @@ knitr::kable(data.frame("Truth"=0:3, lqda_pred),
 
 From the confusion matrix, we could see that QDA has a very good prediction performance with its prediction accuracy over 90.9%. The classifier QDA with quadratic classification boundary has an overwhelming advantage over the classifier LDA with linear boundary regarding the prediction accuracy. In addition, we see from Table 3 that adding quadratic terms in the logistic regression model greatly increase the prediction accuracy, from previous 34.5% to current 88.8%. As quadratic models improve the prediction accuracy greatly, our expectation in data exploration is confirmed that the decision boundary between classes is not linear.
 
-### 3.3 K-Nearest Number (KNN)
+### 3.3 K-Nearest Neighbors (KNN)
 
-As we are sure that the decision boundary was non-linear, we wanted to try more flexible models with less assumptions on distribution of the dataset. Therefore, we tried KNN method on this dataset. First, we performed 5-fold cross validation on training set to choose the corresponding K with the smallest cross-validation error. From Figure 6, we could see that K equals 3 was the optimal choice. After that, we fitted KNN model with K=3 again and obtained the prediction accuracy.
+As we are sure that the decision boundary is non-linear, we want to try more flexible models with less assumptions on the distribution of the dataset. Therefore, we try KNN method on this dataset. First, we perform 5-fold cross validation on training set to choose the corresponding K with the smallest cross-validation error. From Figure 6, we could see that K equals 3 is the optimal choice. After that, we fit KNN model with K=3 again on the test set and obtain the prediction accuracy.
 
 ```{r}
 ## Initialize

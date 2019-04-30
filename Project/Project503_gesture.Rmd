@@ -353,7 +353,7 @@ The random forest has the best prediction accuracy so far which is over 91.1%. B
 knitr::include_graphics(c("randomforest.png"))
 ```
 
-Table 7 showed the prediction results of the classification tree and random forest. For each class category, random forest outperformed the classification tree model. 
+Table 7 shows the prediction results of the classification tree and random forest. For each class category, random forest outperforms the classification tree model. 
 
 ```{r}
 # Table 7: tree & random forest
@@ -375,7 +375,7 @@ knitr::kable(t2,format='pandoc',caption=cap,align='c',digits = 2,
              col.names=c('Method','Prediction Accuracy %'))
 ```
 
-Table 8 collected the prediction accuracy rates of all the classification methods we went through. We can see that random forest had the best prediction performance, QDA, SVM with degree-2 polynomial kernel and logistic regression with quadratic terms of the predictors had the next best performance.
+Table 8 collects the prediction accuracy rates of all the classification methods we go through. We can see that random forest has the best prediction performance, QDA, SVM with degree-2 polynomial kernel and logistic regression with quadratic terms of the predictors have the next best performance.
 
 ## 4. Conclusion and Discussion 
 

@@ -110,13 +110,13 @@ Look at the pairwise scatterplot of `V2` and `V7` in Figure 5, it seems that `V2
 
 ### 2.5 Variable Selection
 
-As mentioned before, we had 64 predictor variables and some were more important than others. Therefore, we tried two methods to do variable selection to reduce redundance and better the prediction performance and interpretability. 
+As mentioned before, we have 64 predictor variables and some are more important than others. Therefore, we try two methods to do variable selection to reduce redundance and better the prediction performance and interpretability. 
 
-The first method was to use random forest with mtry=8 to fit the whole dataset and check the importance of the variables. We found that the last but one sensor in each reading was most important and the second sensor in each reading was next most important, which can be seen in Figure 5. 
+The first method is to use random forest with mtry=8 to fit the whole dataset and check the importance of the variables. We find that the last but one sensor in each reading is most important and the second sensor in each reading is next most important, which can be seen in Figure 5. 
 
-The second method was to utilize stepwise forward selection based on AIC and BIC values to choose the corresponding optimal logistic regression models respectively and find the important variables. The important variables found in this method were basically the same as the ones we found before using random forest. 
+The second method is to utilize stepwise forward selection based on AIC and BIC values to choose the corresponding optimal logistic regression models respectively and find the important variables. The important variables found in this method are basically the same as the ones we find before using random forest. 
 
-Finally we separately checked the overall prediction accuracy using 8 predictors, i.e., the 7th sensors in 8 readings, and the accuracy using 16 predictors, i.e., the 7th and 2nd sensors in 8 readings. And we reached the conclusion that the latter one had overall better performance than the former one. Thus, we finally decided to carry on the remaining analysis with 16 important predictors.
+Finally we separately check the overall prediction accuracy using 8 predictors, i.e., the 7th sensors in 8 readings, and the accuracy using 16 predictors, i.e., the 7th and 2nd sensors in 8 readings. And we reach the conclusion that the latter one have overall better performance than the former one. Thus, we finally decide to carry on the remaining analysis with 16 important predictors.
 
 ```{r,fig.cap="The Importance of the Variables",fig.pos="H",,out.height='60%'}
 # The Importance of the Variables

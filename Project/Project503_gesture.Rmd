@@ -1,6 +1,6 @@
 ---
 title: 'Predicting the Gestures'
-author: "Chen Xie, Xun Wang, Xinye, Jiang"
+author: "Chen Xie, Xun Wang, Xinye Jiang"
 date: "`r format(Sys.time(), '%B %d, %Y')`"
 output:
   pdf_document:

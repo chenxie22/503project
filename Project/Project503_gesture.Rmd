@@ -19,7 +19,7 @@ Artificial Intelligence is extremely popular in our new technology age. It is wi
 
 The dataset has 11678 observations of human arm muscle activity corresponding to four different hand gestures from a prosthetic control system. It has four classes of motions which are "rock", "scissors", "paper" and "ok" as the response variable. Description of variables is shown in Table 1. In this dataset, `gestures`, i.e., the `V65`, is our response variable. The variables `V1` to `V8` are related to the first reading of 8 sensors, `V9` to `V16` are related to the second reading of 8 sensors, etc. All predictors are continuous variables. 
 
-Our essential motivation for this project is to predict the `gestures` as accurately as possible. We want to fit the data with various classification methods including logistic regression, LDA, QDA, KNN, SVM, classification tree and random forest, and find the one that has the best prediction performance. Although the sample size is large, some classification methods such as KNN and QDA, are not suitable for a large number of predictors. So before model selection, we also want to reduce the dimension of predictors. To achieve this objective, we consider two possible methods, PCA and variable selection. Additionally, we want to know the important predictors for the 4 gestures. 
+Our essential motivation for this project is to predict the `gestures` as accurately as possible. We want to fit the data with various classification methods including logistic regression, LDA, QDA, KNN, SVM, classification tree and random forest, and find the one that has the best prediction performance. Although the sample size is large, some classification methods such as KNN and QDA, are not suitable for a large number of predictors. So before model selection, we also want to reduce the dimension of predictors. To achieve this objective, we consider two possible methods, PCA and variable selection. Additionally, we want to know the important predictors for classifying the 4 gestures. 
 
 
 ```{r}
@@ -53,7 +53,7 @@ library(nnet);library(randomForest);library(foreign);
 
 ### 2.1 Individual Variables
 
-To have an intuitive sense of the dataset, first we can have a look at the barchart of the response variable `gesture`, which is on the left side of the Figure 1. We see that the `gesture` is extremely balanced, as each category of the response variable has around 2900 observations. It is good for following analysis, especially for prediction. Next, we want to know more about the independent variables. We find that the individual distributions of all 64 predictors are quite similar, so we can only take the first 8 variables `V1`-`V8` as an example, which are the first reading of 8 sensors. We can also find some extreme values for `V1`-`V8` in our dataset. To be more intuitive, we can view boxplots of each predictor. Here we just take the boxplot of `V1`, which is on the right side of Figure 1, as an example, we notice that the distribution of `V1` is distributed around 0 and is heavy-tailed.
+To have an intuitive sense of the dataset, first we can have a look at the barchart of the response variable `gesture`, which is on the left side of the Figure 1. We see that the `gesture` is extremely balanced, as each category of the response variable has around 2900 observations. It is good for following analysis, especially for prediction. Next, we want to know more about the independent variables. We find that the individual distributions of all 64 predictors are quite similar, so we can only take the first variable `V1` as an example, which is the first reading of the first sensor. Based on the right side boxplot in Figure 1, we notice that the distribution of `V1` is focused around 0 and have long symmetric tails. 
 
 ```{r,out.width='49%',fig.cap="Barchart of Gestures and Boxplot of V1",fig.show='hold',fig.pos="H",out.height='60%'}
 # Response barchart & Scatterplot
@@ -76,14 +76,14 @@ knitr::include_graphics("correlation2.png")
 
 ### 2.3 Relationship with Response
 
-Next, we explore the relationship between predictors and the response. Using the density plots in Figure 4, we address the different significance of each predictor variable in prediction for gesture. For example, the densities of sensor 1 in reading 1 for 4 gesture classes were quite similar, while the densities of sensor 7 in reading 1 were quite different. In this case, the sensor 7 should be put on more weights for prediction than the sensor 1. The importance diversity encouraged us to do variable selection to reduce dimensions. 
+Next, we explore the relationship between predictors and the response. Using the density plots of every predictor with different response classes, we address the different significance of each predictor variable for `gesture`. For example, in Figure 4, the densities of sensor 1 in reading 1 for 4 gesture classes were quite similar, while the densities of sensor 7 in reading 1 were quite different. In this case, the sensor 7 should be put on more weights for prediction than the sensor 1. The importance diversity encouraged us to do variable selection to reduce dimensions. 
 
 ```{r,out.width='49%',fig.cap="Density Plots",fig.show='hold',fig.pos="H",,out.height='60%'}
 # Histograms of reading 1 of sensor 1 and sensor 7
 knitr::include_graphics(c("r1sensor1.png","r1sensor7.png"))
 ```
 
-To visualize the data more comprehensively, we can look at the scatterplot and contour of density of `V2` and `V7` in Figure 5. The joint distributions of `V2` and `V7` look like normal with unequal variances for different gestures. Based on this plot, we expect that the decision boundary between the classes is non-linear and QDA may perform well on this dataset. 
+To visualize the data more comprehensively, we can look at the scatterplot and contour of density of `V2` and `V7` in Figure 5. The joint distributions of `V2` and `V7` look like normal with unequal variances for different gestures. Based on this plot, we expect that the decision boundary between the classes is non-linear and Quadratic discriminant analysis (QDA) may perform well on this dataset. 
 
 
 ```{r,out.width='49%',out.height='60%',fig.cap="Scatterplot and Contour of V2 and V7",fig.show='hold',fig.pos="H"}
@@ -93,11 +93,11 @@ knitr::include_graphics(c("scatterplot.png","contour.png"))
 
 ### 2.4 PCA
 
-Look at the pairwise scatterplot of `V2` and `V7` in Figure 5, it seems that `V2` and `V7` have no obvious pairwise structure. As no specific pattern is detected, PCA won't be a good way to reduce dimension. We try PCA and find that the first 35 principal components merely cover 80% of the variance which means that the effect of this dimension reduction method to this dataset is terrible.
+Looking at the pairwise scatterplot of `V2` and `V7` in Figure 5, it seems that `V2` and `V7` have no obvious pairwise structure. As no specific pattern is detected, PCA is not presumed as a good way to reduce dimension. We try PCA and find that the first 35 principal components merely cover 80% of the variance which means that the effect of this dimension reduction method to this dataset is terrible.
 
 ### 2.5 Variable Selection
 
-As mentioned before, we have 64 predictor variables and some are more important than others. Therefore, we try two methods to do variable selection to reduce redundance and better the prediction performance and interpretability. 
+As mentioned before, we have 64 predictor variables and some are possibly more important than others. Therefore, we try two methods to perform variable selection to reduce redundance and better the prediction performance and interpretability. 
 
 The first method is to use random forest with mtry=8 to fit the whole dataset and check the importance of the variables. We find that the last but one sensor in each reading is most important and the second sensor in each reading is next most important, which can be seen in Figure 5. 
 

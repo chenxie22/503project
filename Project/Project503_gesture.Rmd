@@ -322,14 +322,14 @@ Table 6 shows that SVM with these two kernels both perform well, with the one wi
 
 ### 3.5 Classification Tree (CART) & Random Forest (RF)
 
-Finally we fitted classification tree and random forest to the dataset. 
+Finally we fit classification tree and random forest to the dataset. 
 
 ```{r,out.width='80%',out.height='70%',fig.cap="Decision Tree Plot",fig.show='hold',fig.pos="H"}
 # Decision Tree Plot and Random Forest Partial Plots
 knitr::include_graphics(c("tree.png"))
 ```
 
-The ultimate decision tree model was shown in Figure 7. We saw that it used the variables 'V63', 'V58', 'V31', 'V15', 'V50' and 'V47'. The decision tree had accuracy slightly larger than 70%, which was hardly counted as good performance. This intrigued us to do random forest to better the prediction performance. 
+The ultimate decision tree model is shown in Figure 7. We see that it uses the variables 'V63', 'V58', 'V31', 'V15', 'V50' and 'V47'. The decision tree has accuracy slightly larger than 70%, which is hardly counted as good performance. This intrigues us to do random forest to better the prediction performance. 
 
 ```{r}
 ## Classification Tree
@@ -346,7 +346,7 @@ rf_pred = predict(rf_fit,newdata=g_new[-train,])
 accuracy_rf=mean(rf_pred==g_new$V65[-train])
 ```
 
-The random forest had the best prediction accuracy so far which was over 91.1%. Becuase partial plots of 8 readings from each sensor displayed a similar pattern, we just showed the partial plots of `V7` and `V18` in Figure 8 as the representatives of 7th and 2nd sensor. Keeping other predictors unchangeable, the influence of the 7th and 2nd sensors to the gesture classes varied from time to time. It was not linear nor constant, so these senors produced a significant and non-linear influence to response. In general, the effects of sensors on response exhibited different patterns when they were closed to 0 and away from 0. 
+The random forest has the best prediction accuracy so far which is over 91.1%. Becuase partial plots of 8 readings from each sensor display a similar pattern, we just show the partial plots of `V7` and `V18` in Figure 8 as the representatives of 7th and 2nd sensor. Keeping other predictors unchangeable, the influence of the 7th and 2nd sensors to the gesture classes varies from time to time. It is not linear nor constant, so these senors produced a significant and non-linear influence to response. In general, the effects of sensors on response exhibited different patterns when they were closed to 0 and away from 0. 
 
 ```{r,out.width='50%',fig.cap="Random Forest Partial Plots",fig.show='hold',fig.pos="H"}
 # Decision Tree Plot and Random Forest Partial Plots
